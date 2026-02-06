@@ -1,4 +1,4 @@
-These need to be downloaded for the code to work.
+#These need to be downloaded for the code to work.
 
 pymongo
 python-dotenv
