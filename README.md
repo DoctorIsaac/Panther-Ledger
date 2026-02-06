@@ -1,2 +1,0 @@
-# FinanceTracker
-Capstone II Project 
