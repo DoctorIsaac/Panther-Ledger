@@ -23,3 +23,11 @@ def get_user_contact(username: str):
                        "Email": user.get("email"),
                        "Phone Number": user.get("phone_num")
                        }}
+
+def delete_user(username: str):
+    user = users.find_one({"username": username})
+    if user is None:
+        return None
+
+    return users.delete_one({"username": username})
+
