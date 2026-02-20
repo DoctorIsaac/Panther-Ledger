@@ -9,7 +9,7 @@ db = get_database()
 expenses = db["expense_entry"]
 categories = db["category"]
 
-def create_expense_entry(user_id: str, name: str, amount: Decimal, category_ref: str, description: str = "", purchase_date: str = ""):
+def create_expense_entry(user_id: str, name: str, amount: Decimal, category_ref: str, description: str = "", purchase_date: str = "", document_ref: str =""):
     user_obj_id = ObjectId(user_id)
     name_clean = name.strip().lower()
     amount_clean = Decimal(amount).quantize(Decimal("0.01"),rounding=ROUND_HALF_UP)
@@ -31,6 +31,7 @@ def create_expense_entry(user_id: str, name: str, amount: Decimal, category_ref:
     if not category_doc:
         raise ValueError("Category does not exist")
 
+    document_obj_id = ObjectId(document_ref) if document_ref else None
     expense_num = next_counter(f"expense_entry_{user_id}",start=0)
 
     expense = {
@@ -42,7 +43,8 @@ def create_expense_entry(user_id: str, name: str, amount: Decimal, category_ref:
                 "description": description.strip(),
                 "is_active": True,
                 "purchase_date": date_clean,
-                "created_at": datetime.now(timezone.utc)
+                "created_at": datetime.now(timezone.utc),
+                "document_ref": document_obj_id
     }
 
     result = expenses.insert_one(expense)
@@ -119,3 +121,4 @@ def delete_expense_entry(user_id: str,expense_id: int):
         raise ValueError("Expense does not exist")
 
     return True
+
