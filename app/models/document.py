@@ -3,13 +3,14 @@ from bson import ObjectId
 from app.db.db_connection import get_database
 from app.db.counters import next_counter
 from .expense_entry import create_expense_entry
-
-#Upload to Git
+from typing import Literal, cast
 
 db = get_database()
 documents = db["document"]
 
-def create_document(user_id: str, file_name: str, description: str, file_type: str ="pdf" ):
+ExpenseType = Literal["deposit", "expense"]
+
+def create_document(user_id: str, file_name: str, description: str, file_type: str ="pdf", account_type: str = "unknown" ):
     user_obj_id = ObjectId(user_id)
     file_name_clean = file_name.strip()
 
@@ -33,6 +34,7 @@ def create_document(user_id: str, file_name: str, description: str, file_type: s
         "description": description.strip(),
         "file_type": file_type.strip().lower(),
         "created_at": datetime.now(timezone.utc),
+        "account_type": account_type,
         "is_active": True,
         "linked_expenses": []
     }
@@ -77,8 +79,20 @@ def add_expense_to_document(user_id: str, document_ref: str, items: list, defaul
     if not doc:
         raise ValueError("Document does not exist")
 
-    if not items or not isinstance(items, list):
+    if not isinstance(items, list):
         raise ValueError("items must be a list")
+
+    if len(items) == 0:
+        documents.update_one(
+            {"_id": doc_obj_id, "user_id": user_obj_id, "is_active": True},
+            {"$set": {"parsed_status": "parsed_empty", "updated_at": datetime.now(timezone.utc)}}
+        )
+        return {
+            "document_ref": document_ref,
+            "created_count": 0,
+            "skipped_duplicates": 0,
+            "expense_ids": []
+        }
 
     expense_ids = []
     expense_obj_ids = []
@@ -89,6 +103,15 @@ def add_expense_to_document(user_id: str, document_ref: str, items: list, defaul
         amount = item.get("amount", None)
         category_ref = (item.get("category_ref") or "").strip()
         description = (item.get("description") or "").strip()
+        raw_expense_type = (item.get("expense_type") or "").strip().lower()
+
+        if raw_expense_type == "":
+            raw_expense_type = "expense"
+
+        if raw_expense_type not in ["deposit", "expense"]:
+            raise ValueError(f"Expense type {raw_expense_type} not supported in item #{i}")
+
+        expense_type = cast(ExpenseType, raw_expense_type)
 
         purchase_date = (item.get("purchase_date") or "").strip()
         if not purchase_date:
@@ -102,6 +125,7 @@ def add_expense_to_document(user_id: str, document_ref: str, items: list, defaul
                 user_id=user_id,
                 name=name,
                 amount=amount,
+                expense_type=expense_type,
                 category_ref=category_ref,
                 description=description,
                 purchase_date=purchase_date,
