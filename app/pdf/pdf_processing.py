@@ -1,5 +1,3 @@
-#upload
-
 import re
 import pdfplumber
 from decimal import Decimal
@@ -244,3 +242,4 @@ def process_bank_statement(user_id: str, pdf_path: str, file_name: str, descript
         "processed_text_count": len(transactions),
         "insert_result": result
     }
+
