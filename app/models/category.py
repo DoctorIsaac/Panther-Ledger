@@ -62,18 +62,56 @@ def update_category(user_id: str, category_id: int, name: str, description: str 
     user_obj_id = ObjectId(user_id)
     name_clean = name.strip().lower()
 
-    duplicate = categories.find_one({"user_id": user_obj_id, "name": name_clean, "category_id": {"$ne": category_id}})
+    duplicate = categories.find_one({"user_id": user_obj_id,
+                                     "name": name_clean,
+                                     "category_id": {"$ne": category_id},
+                                     "is_active": True})
     if duplicate:
         raise ValueError("Another category already exists with this name")
 
     result = categories.update_one(
-        {"user_id": user_obj_id, "category_id": category_id},
+        {"user_id": user_obj_id,
+         "category_id": category_id,
+         "is_active": True},
         {"$set": {
             "name": name_clean,
-            "description": description.strip()
+            "description": description.strip(),
+            "updated_at": datetime.now(timezone.utc)
         }}
     )
     if result.matched_count == 0:
         raise ValueError("Category does not exist")
 
     return result.modified_count == 1
+
+#general display of all categories
+def display_category_id(user_id: str):
+    user_obj_id = ObjectId(user_id)
+
+    results = categories.find({"user_id": user_obj_id,
+                                   "is_active": True},
+                                  {
+                                      "_id": 0
+                                  }
+                            )
+    return list(results)
+
+#specific category id search <-- not much use for it <-- may delete later
+def get_category_id(user_id: str, name: str):
+    user_obj_id = ObjectId(user_id)
+    name_clean = name.strip().lower()
+
+    result = categories.find_one({"user_id": user_obj_id,
+                                   "name": name_clean,
+                                   "is_active": True},
+                                  {
+                                    "_id": 0,
+                                    "category_id": 1
+                                  }
+                            )
+    if not result:
+        raise ValueError("Category does not exist")
+
+    return result["category_id"]
+
+
