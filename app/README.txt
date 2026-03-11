@@ -8,5 +8,6 @@ TODO
 -retrieval queries
 -hosting <-- ideally free.
 -actual pdf upload system
+-need to introduce standard categories
 
 
