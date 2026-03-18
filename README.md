@@ -1,5 +1,6 @@
 #Run these in your console
-#Enter app -> db -> .env and change username and password to the ones provided to you. If not provided please message @Anthony
+#Enter app -> db -> .env and change username and password to the ones provided to you. 
+#If not provided please message @Anthony
 
 #Run the line below in the python command console
 pip install -r requirements.txt
