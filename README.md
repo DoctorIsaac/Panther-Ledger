@@ -3,7 +3,10 @@
 #If not provided please message @Anthony
 
 #Run the line below in the python command console
+
+##############################################################
 pip install -r requirements.txt
+###############################################
 
 
 python -m app.main
