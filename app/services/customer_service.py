@@ -1,36 +1,3 @@
-from app.models.user import get_user_id, get_user_contact, update_user_contact,delete_user
-from app.db.auth_service import login_user, register_user
-import re
-
-USERNAME_MAX_LENGTH = 25
-USERNAME_MIN_LENGTH = 5
-
-PASSWORD_MAX_LENGTH = 15
-PASSWORD_MIN_LENGTH = 5
-
-ADDRESS_MAX_LENGTH = 100
-ZIP_LENGTH = 5
-
-NAME_REGEX = r"^[A-Za-z'-]+$"
-EMAIL_REGEX = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
-PHONE_REGEX = r"^\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$"
-ZIP_REGEX = r"^\d{5}$"
-
-def normalize_username(username: str) -> str:
-    return (username or "").strip()
-
-def validate_username(username: str) -> None:
-    if not username:
-        raise ValueError("Username field cannot be empty")
-
-    if len(username) < USERNAME_MIN_LENGTH:
-        raise ValueError("Username field must be at least 5 characters")
-
-    if len(username) > USERNAME_MAX_LENGTH:
-        raise ValueError("Username field must be at most 25 characters")
-
-def normalize_password(password: str) -> str:
-    return (password or "").strip()
 
 def validate_password(password: str) -> None:
     if not password:
@@ -238,5 +205,7 @@ def update_customer_details(username:str, updates: dict):
         "user_id": user_id,
         "contact_info": list(updates.keys())
     }
+
+
 
 
