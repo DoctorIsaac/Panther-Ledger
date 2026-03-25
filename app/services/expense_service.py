@@ -1,4 +1,3 @@
-#UPDATE
 from decimal import Decimal, InvalidOperation
 from typing import Literal, cast
 from app.models.util import date_parser
@@ -39,10 +38,10 @@ def validate_amount(amount: Decimal) -> Decimal:
 
     return amount_decimal
 
-def normalize_description(description: str) -> str:
+def normalize_expense_description(description: str) -> str:
     return (description or "").strip()
 
-def validate_description(description: str) -> None:
+def validate_expense_description(description: str) -> None:
 
     if description and len(description) > DESCRIPTION_MAX_LENGTH:
         raise ValueError("Description too long")
@@ -67,12 +66,12 @@ def prepare_expense_data(
         ):
 
     name = normalize_expense_name(name)
-    description = normalize_description(description)
+    description = normalize_expense_description(description)
     expense_type = normalize_expense_type(expense_type)
 
     validate_expense_name(name)
     amount = validate_amount(amount)
-    validate_description(description)
+    validate_expense_description(description)
     validate_expense_type(expense_type)
     validate_purchase_date(purchase_date)
 
