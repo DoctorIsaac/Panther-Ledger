@@ -1,0 +1,10 @@
+.home {
+  background: linear-gradient(135deg, #ffffff 1%, #c078e918 25%, #fefeff 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.home main {
+  flex: 1;
+}
