@@ -1,0 +1,591 @@
+/* ════════════════════════════════════════
+   LAYOUT
+════════════════════════════════════════ */
+.ob-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #081E3F;
+}
+
+/* ── Header ── */
+.ob-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+.ob-brand {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ob-step-label {
+  color: #B5934C;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ── Body ── */
+.ob-body {
+  flex: 1;
+  display: flex;
+}
+
+.ob-body--success {
+  background: #f0f2f7;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ════════════════════════════════════════
+   LEFT PANEL
+════════════════════════════════════════ */
+.ob-left {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  gap: 1rem;
+}
+
+.ob-pl-badge {
+  width: 64px;
+  height: 64px;
+  background-color: #B5934C;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin-bottom: 0.25rem;
+}
+
+.ob-left-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-align: center;
+  white-space: pre-line;
+  line-height: 1.25;
+}
+
+.ob-left-desc {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  line-height: 1.55;
+  max-width: 210px;
+}
+
+/* Progress dots */
+.ob-dots {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.ob-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transition: background 0.3s;
+}
+
+.ob-dot.active {
+  background: #B5934C;
+}
+
+/* ════════════════════════════════════════
+   RIGHT PANEL
+════════════════════════════════════════ */
+.ob-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.ob-right--success {
+  padding: 2rem;
+}
+
+.ob-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 2.25rem 2rem;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+}
+
+.ob-card--success {
+  max-width: 520px;
+  text-align: center;
+}
+
+.ob-card-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #081E3F;
+  margin-bottom: 0.4rem;
+}
+
+.ob-card-sub {
+  font-size: 0.88rem;
+  color: #6b7280;
+  line-height: 1.55;
+  margin-bottom: 1.5rem;
+}
+
+/* ════════════════════════════════════════
+   STEP 1 — GOALS
+════════════════════════════════════════ */
+.goals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.goal-card {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.goal-card.selected {
+  border-color: #B5934C;
+  box-shadow: 0 0 0 1px #B5934C22;
+}
+
+.goal-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.6rem;
+}
+
+.goal-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.goal-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: transparent;
+  transition: all 0.2s;
+}
+
+.goal-check.checked {
+  background: #B5934C;
+  border-color: #B5934C;
+  color: #ffffff;
+}
+
+.goal-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #081E3F;
+  margin-bottom: 0.25rem;
+}
+
+.goal-desc {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ════════════════════════════════════════
+   STEP 2 — INCOME
+════════════════════════════════════════ */
+.income-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.ob-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.ob-label-upper {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #374151;
+  margin-bottom: 0.4rem;
+}
+
+.ob-input {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  color: #081E3F;
+  outline: none;
+  transition: box-shadow 0.2s;
+}
+
+.ob-input--dark {
+  background: #0d1f35;
+  color: #ffffff;
+}
+
+.ob-input--dark::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.ob-input:focus {
+  box-shadow: 0 0 0 2px #B5934C55;
+}
+
+.ob-select {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  color: #374151;
+  outline: none;
+  cursor: pointer;
+  appearance: auto;
+}
+
+/* Slider */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.slider-min, .slider-max {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.slider-val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #081E3F;
+  min-width: 64px;
+  text-align: right;
+}
+
+.ob-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #081E3F 0%, #081E3F var(--pct), #e5e7eb var(--pct), #e5e7eb 100%);
+  outline: none;
+  cursor: pointer;
+}
+
+.ob-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #081E3F;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px #081E3F;
+  cursor: pointer;
+}
+
+/* ════════════════════════════════════════
+   STEP 3 — BANKS
+════════════════════════════════════════ */
+.security-badge {
+  font-size: 0.75rem;
+  color: #16a34a;
+  background: #f0fdf4;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.banks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.bank-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.bank-card.selected {
+  border-color: #B5934C;
+}
+
+.bank-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.bank-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+}
+
+/* ════════════════════════════════════════
+   STEP 4 — NOTIFICATIONS
+════════════════════════════════════════ */
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 1.5rem;
+}
+
+.notif-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 1rem;
+}
+
+.notif-row:last-child {
+  border-bottom: none;
+}
+
+.notif-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.notif-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #081E3F;
+}
+
+.notif-desc {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+/* Toggle switch */
+.toggle {
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: #e5e7eb;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.25s;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.toggle.on {
+  background: #3b82f6;
+}
+
+.toggle.on::after {
+  transform: translateX(20px);
+}
+
+/* ════════════════════════════════════════
+   STEP 5 — SUCCESS
+════════════════════════════════════════ */
+.ob-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.ob-success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid #B5934C;
+  color: #B5934C;
+  font-size: 1.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.ob-success-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #081E3F;
+  margin-bottom: 0.75rem;
+}
+
+.ob-success-sub {
+  font-size: 0.88rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+  max-width: 400px;
+}
+
+.ob-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 0.6rem;
+}
+
+.ob-pill {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+}
+
+.ob-pill.green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ob-pill.gold {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ob-btn-large {
+  margin-top: 1.5rem;
+  padding: 0.9rem 2.5rem;
+  font-size: 1rem;
+}
+
+/* ════════════════════════════════════════
+   SHARED ACTIONS & BUTTONS
+════════════════════════════════════════ */
+.ob-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ob-btn-primary {
+  background: #081E3F;
+  color: #B5934C;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.ob-btn-primary:hover {
+  opacity: 0.85;
+}
+
+.ob-btn-back {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.ob-btn-back:hover {
+  color: #081E3F;
+}
+
+.ob-btn-skip {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-left: auto;
+  text-decoration: underline;
+}
+
+.ob-btn-skip:hover {
+  color: #6b7280;
+}
+
+/* ── Footer text ── */
+.ob-footer-text {
+  font-size: 0.72rem;
+  color: #c0c4cc;
+  text-align: right;
+  margin-top: 2rem;
+  margin-bottom: 0;
+}
