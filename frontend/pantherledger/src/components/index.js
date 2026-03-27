@@ -1,5 +1,4 @@
-// Central export file for all components
 export { default as Header } from './header'
-export { default as Hero } from './Hero'
-export { default as Features } from './Features'
-export { default as Footer } from './Footer'
+export { default as Hero } from './hero'
+export { default as Features } from './features'
+export { default as Footer } from './footer'
