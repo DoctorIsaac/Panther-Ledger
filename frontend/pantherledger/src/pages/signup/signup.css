@@ -1,0 +1,256 @@
+.signup-page {
+  min-height: 100vh;
+  display: flex;
+  background-color: #081E3F;
+  position: relative;
+}
+
+/* ── Back link ── */
+.back-link {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.75rem;
+  color: #B5934C;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+
+.back-link:hover {
+  opacity: 0.75;
+}
+
+/* ── Left panel ── */
+.signup-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 3rem 2rem;
+}
+
+/* Stacked card logo */
+.signup-logo-stack {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.logo-card {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  background-color: #B5934C;
+  border-radius: 18px;
+}
+
+.logo-card--back {
+  top: 0;
+  left: 24px;
+  opacity: 0.6;
+  transform: rotate(8deg);
+}
+
+.logo-card--front {
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-dollar {
+  font-size: 4.5rem;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.signup-tagline {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* ── Right panel ── */
+.signup-right {
+  flex: 1.1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+}
+
+.signup-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 2.5rem 2.25rem;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+}
+
+.signup-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #081E3F;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Form ── */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #081E3F;
+  margin-bottom: 0.4rem;
+}
+
+.form-group input {
+  background-color: #f0f1f3;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  outline: none;
+  transition: box-shadow 0.2s;
+}
+
+.form-group input:focus {
+  box-shadow: 0 0 0 2px #B5934C55;
+}
+
+/* ── Password strength ── */
+.strength-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 0.3rem;
+  margin-top: -0.5rem;
+}
+
+.strength-segment {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #e0e0e0;
+  transition: background-color 0.3s;
+}
+
+.strength-segment.active {
+  background-color: #B5934C;
+}
+
+.strength-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #B5934C;
+  margin: 0 0 0.75rem;
+}
+
+/* ── Terms ── */
+.terms-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+}
+
+.terms-label input[type='checkbox'] {
+  margin-top: 2px;
+  accent-color: #B5934C;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.terms-link {
+  color: #B5934C;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.terms-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Buttons ── */
+.signup-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  background-color: #081E3F;
+  color: #B5934C;
+  border: none;
+  padding: 0.8rem 1.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.btn-google {
+  background-color: #f0f1f3;
+  color: #081E3F;
+  border: none;
+  padding: 0.8rem 1.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-google:hover {
+  background-color: #e2e4e8;
+}
+
+/* ── Login redirect ── */
+.login-redirect {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #081E3F;
+  border-top: 1px solid #eee;
+  padding-top: 1.25rem;
+}
+
+.login-redirect-link {
+  color: #1a56db;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.login-redirect-link:hover {
+  text-decoration: underline;
+}
