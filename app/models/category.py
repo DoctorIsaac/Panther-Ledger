@@ -13,7 +13,8 @@ def create_category(user_id: str, name: str, description: str = ""):
 
     existing = categories.find_one({
         "user_id": user_obj_id,
-        "name": name_clean
+        "name": name_clean,
+        "is_active": True
     })
 
     if existing:
@@ -113,5 +114,4 @@ def get_category_id(user_id: str, name: str):
         raise ValueError("Category does not exist")
 
     return result["category_id"]
-
 
