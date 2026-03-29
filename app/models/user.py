@@ -9,7 +9,7 @@ def get_user_id(username: str):
     if user is None:
         return None
 
-    return user["_id"]
+    return str(user["_id"])
 
 def get_user_contact(username: str):
     user = users.find_one({"username": username},{"first_name": 1,"last_name": 1, "phone_number": 1, "email": 1})
@@ -30,18 +30,18 @@ def update_user_contact(username: str, updates: dict):
     updates = {k: v for k, v in updates.items() if k in ALLOWED_FIELDS}
 
     if not updates:
-        return False
+        raise ValueError("No valid fields to update")
 
     result = users.update_one(
         {"username": username},
         {"$set": updates})
 
-    return result.modified_count == 1
+    return result.matched_count == 1
 
 def delete_user(username: str):
     user = users.find_one({"username": username})
     if user is None:
         return None
 
-    return users.delete_one({"username": username})
+    return users.delete_one({"username": username}).deleted_count == 1
 
