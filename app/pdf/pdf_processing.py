@@ -1,3 +1,5 @@
+#uploaded <--
+
 import re
 import pdfplumber
 from decimal import Decimal
@@ -145,7 +147,6 @@ def process_transactions(pdf_path: str):
 
         trans_date = tokens[date_idx]
 
-        #stuff idk
         desc_tokens = tokens[date_idx + 1: amt_idx]
         if desc_tokens and is_date_mmdd(desc_tokens[0]):
             desc_tokens = desc_tokens[1:]
@@ -164,14 +165,14 @@ def process_transactions(pdf_path: str):
             # bank default: positive = deposit, negative = expense
             expense_type = "deposit" if amount > 0 else "expense"
 
-        mm = int(trans_date.split("/")[0])
+        mm, dd = map(int, trans_date.split("/"))
         year = infer_year_for_mmdd(mm, statement_end_year, raw_text)
-        purchase_date = f"{trans_date.replace('/', '-')}-{year}"
+        purchase_date = f"{year}-{mm:02d}-{dd:02d}"
 
         items.append({
             "name": " ".join(description.lower().split()),
             "description": description,
-            "amount": float(amount),
+            "amount": amount,
             "expense_type": expense_type,
             "purchase_date": purchase_date
         })
@@ -242,4 +243,3 @@ def process_bank_statement(user_id: str, pdf_path: str, file_name: str, descript
         "processed_text_count": len(transactions),
         "insert_result": result
     }
-
