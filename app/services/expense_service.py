@@ -1,6 +1,7 @@
 from decimal import Decimal, InvalidOperation
 from typing import Literal, cast
 from app.models.util import date_parser
+from bson import ObjectId
 
 from app.models.expense_entry import create_expense_entry, update_expense_entry, delete_expense_entry
 import re
@@ -9,7 +10,6 @@ EXPENSE_NAME_MAX_LENGTH = 25
 DESCRIPTION_MAX_LENGTH = 250
 
 EXPENSE_NAME_REGEX = r"^[A-Za-z0-9\s&'*-]+$"
-DATE_REGEX = r"^\d{4}-\d{2}-\d{2}$"
 
 def normalize_expense_name(expense_name: str) -> str:
     return (expense_name or "").strip().lower()
@@ -29,14 +29,15 @@ def validate_amount(amount: Decimal) -> Decimal:
         raise ValueError("Amount cannot be None")
 
     try:
-        amount_decimal = Decimal(amount)
+        if not isinstance(amount, Decimal):
+            amount = Decimal(str(amount))
     except (InvalidOperation, ValueError):
         raise ValueError("Invalid format")
 
-    if amount_decimal < 0:
+    if amount < 0:
         raise ValueError("Amount cannot be negative")
 
-    return amount_decimal
+    return amount
 
 def normalize_expense_description(description: str) -> str:
     return (description or "").strip()
@@ -54,8 +55,11 @@ def validate_expense_type(expense_type: str):
         raise ValueError("Invalid expense type")
 
 def validate_purchase_date(purchase_date: str) -> None:
-    if purchase_date and not re.fullmatch(DATE_REGEX, purchase_date):
-        raise ValueError("Date must be YYYY-MM-DD")
+    if purchase_date:
+        try:
+            date_parser(purchase_date)
+        except ValueError:
+            raise ValueError("Invalid date. Must be YYYY-MM-DD")
 
 def prepare_expense_data(
         name: str,
@@ -78,6 +82,7 @@ def prepare_expense_data(
     expense_type = cast(Literal["deposit", "expense"], expense_type)
 
     date_clean = date_parser(purchase_date)
+    date_clean = date_clean.strftime("%Y-%m-%d")
 
     return name, amount, description, date_clean, expense_type
 
@@ -91,13 +96,23 @@ def generate_expense_entry(user_id: str,
                          document_ref: str ="",
                          expense_type:Literal["deposit", "expense"] = "expense"):
 
+    if document_ref:
+        if not ObjectId.is_valid(document_ref):
+            raise ValueError("Invalid document_ref")
+
     name, amount, description, date_clean, expense_type = prepare_expense_data(name, amount, description, purchase_date, expense_type)
 
-    expense = create_expense_entry(user_id, name, amount, category_ref, description, date_clean, document_ref, expense_type)
+    expense = create_expense_entry(user_id,
+                                   name, amount,
+                                   category_ref,
+                                   description,
+                                   date_clean,
+                                   document_ref,
+                                   expense_type)
 
     return {
         "user_id": user_id,
-        "expense_name": name,
+        "name": name,
         "expense_id": expense["expense_id"]
     }
 
@@ -112,14 +127,22 @@ def update_customer_expense_entry(user_id: str,
 
     name, amount, description, date_clean, expense_type = prepare_expense_data(name, amount, description, purchase_date, expense_type)
 
-    success = update_expense_entry(user_id, name, amount, expense_id, category_ref, description, date_clean, expense_type)
-
+    success = update_expense_entry(
+        user_id=user_id,
+        category_ref=category_ref,
+        amount=amount,
+        expense_id=expense_id,
+        name=name,
+        purchase_date=date_clean,
+        description=description,
+        expense_type=expense_type
+    )
     if not success:
         raise ValueError("Failed to update expense entry")
 
     return {
         "user_id": user_id,
-        "expense_name": name,
+        "name": name,
         "expense_id": expense_id
     }
 
