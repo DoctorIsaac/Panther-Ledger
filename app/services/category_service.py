@@ -5,7 +5,7 @@ import re
 
 CATEGORY_NAME_MAX_LENGTH = 25
 DESCRIPTION_MAX_LENGTH = 250
-NAME_REGEX = r"^[A-Za-z'-]+$"
+NAME_REGEX = r"^[A-Za-z0-9\s'-]+$"
 
 def normalize_category_name(category_name: str) -> str:
     return (category_name or "").strip().lower()
