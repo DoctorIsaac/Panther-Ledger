@@ -1,3 +1,5 @@
+#UPLOAD <--
+
 from datetime import datetime, timezone
 from bson import ObjectId
 from app.db.db_connection import get_database
@@ -36,7 +38,7 @@ def create_document(user_id: str, file_name: str, description: str, file_type: s
         "created_at": datetime.now(timezone.utc),
         "account_type": account_type,
         "is_active": True,
-        "linked_expenses": []
+        "linked_expense_ids": []
     }
 
     result = documents.insert_one(doc)
@@ -63,10 +65,7 @@ def delete_document(user_id: str, document_id: int):
               "updated_at": datetime.now(timezone.utc)}
          })
 
-    if result.matched_count == 0:
-        raise ValueError("Document does not exist")
-
-    return True
+    return result.modified_count > 0
 
 def add_expense_to_document(user_id: str, document_ref: str, items: list, default_purchase_date: str = ""):
     user_obj_id = ObjectId(user_id)
@@ -84,8 +83,13 @@ def add_expense_to_document(user_id: str, document_ref: str, items: list, defaul
 
     if len(items) == 0:
         documents.update_one(
-            {"_id": doc_obj_id, "user_id": user_obj_id, "is_active": True},
-            {"$set": {"parsed_status": "parsed_empty", "updated_at": datetime.now(timezone.utc)}}
+            {"_id": doc_obj_id,
+             "user_id": user_obj_id,
+             "is_active": True},
+            {"$set": {
+                "parsed_status": "parsed_empty",
+                "updated_at": datetime.now(timezone.utc)}
+            }
         )
         return {
             "document_ref": document_ref,
