@@ -1,11 +1,8 @@
-#UPLOAD
-
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from bson import ObjectId, Decimal128
 from app.db.db_connection import get_database
 from app.db.counters import next_counter
-from .util import date_parser
 from typing import Literal
 
 db = get_database()
@@ -24,14 +21,13 @@ def create_expense_entry(user_id: str,
     user_obj_id = ObjectId(user_id)
     name_clean = name.strip().lower()
     amount_clean = Decimal(amount).quantize(Decimal("0.01"),rounding=ROUND_HALF_UP)
-    date_clean = date_parser(purchase_date)
 
 #Checks if expense has already been previously entered
 #Needs to be fixed in case of two identical purchases at same time
     existing_expense = expenses.find_one({"user_id": user_obj_id,
                                           "name": name_clean,
                                           "amount": Decimal128(amount_clean),
-                                          "purchase_date": date_clean,
+                                          "purchase_date": purchase_date,
                                           "expense_type": expense_type,
                                           "is_active": True})
     if existing_expense:
@@ -41,8 +37,8 @@ def create_expense_entry(user_id: str,
     category_obj_id = ObjectId(category_ref)
     category_doc = categories.find_one({
                     "_id": category_obj_id,
-                    "user_id": user_obj_id,
-                    "is_active": True ,})
+                    "user_id": user_obj_id
+                    })
 
     if not category_doc:
         raise ValueError("Category does not exist")
@@ -60,7 +56,7 @@ def create_expense_entry(user_id: str,
                 "expense_type": expense_type,
                 "description": description.strip(),
                 "is_active": True,
-                "purchase_date": date_clean,
+                "purchase_date": purchase_date,
                 "created_at": datetime.now(timezone.utc),
                 "document_ref": document_obj_id
     }
@@ -82,13 +78,12 @@ def update_expense_entry(user_id: str,
 
     name_clean = name.strip().lower()
     amount_clean = Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    date_clean = date_parser(purchase_date)
 
     existing_expense = expenses.find_one({
                                 "user_id": user_obj_id,
                                 "name": name_clean,
-                                "amount": float(amount_clean),
-                                "purchase_date": date_clean,
+                                "amount": Decimal128(amount_clean),
+                                "purchase_date": purchase_date,
                                 "expense_id": {"$ne": expense_id},
                                 "expense_type": expense_type,
                                 "is_active": True
@@ -99,8 +94,8 @@ def update_expense_entry(user_id: str,
     category_obj_id = ObjectId(category_ref)
     category_doc = categories.find_one({
         "_id": category_obj_id,
-        "user_id": user_obj_id,
-        "is_active": True, })
+        "user_id": user_obj_id
+        })
 
     if not category_doc:
         raise ValueError("Category does not exist")
@@ -115,7 +110,7 @@ def update_expense_entry(user_id: str,
                                 "amount": Decimal128(amount_clean),
                                 "expense_type": expense_type,
                                 "description": description.strip(),
-                                "purchase_date": date_clean,
+                                "purchase_date": purchase_date,
                                 "updated_at": datetime.now(timezone.utc)}}
                                 )
 
@@ -201,4 +196,3 @@ def display_expense_entries_by_category(user_id: str):
     return list(results)
 
 #Assign Entry to Doc
-
