@@ -1,21 +1,23 @@
+from bson import ObjectId
+
 from app.models.document import create_document, delete_document, add_expense_to_document
 from app.services.expense_service import validate_amount
 from decimal import Decimal
 
 import re
 
-CATEGORY_NAME_MAX_LENGTH = 25
+FILE_NAME_MAX_LENGTH = 100
 DESCRIPTION_MAX_LENGTH = 250
 NAME_REGEX = r"^[A-Za-z0-9_.\- ]+$"
 
 def normalize_file_name(file_name: str) -> str:
-    return (file_name or "").strip()
+    return (file_name or "").strip().lower()
 
 def validate_file_name(file_name: str) -> None:
     if not file_name:
         raise ValueError("File name cannot be empty")
 
-    if len(file_name) > CATEGORY_NAME_MAX_LENGTH:
+    if len(file_name) > FILE_NAME_MAX_LENGTH:
         raise ValueError("File name too long")
 
     if not(re.fullmatch(NAME_REGEX, file_name)):
@@ -24,12 +26,12 @@ def validate_file_name(file_name: str) -> None:
 def normalize_category_ref(category_ref: str) -> str:
     return (category_ref or "").strip()
 
-def validate_category_ref(category_ref: str) -> None:
-    if not category_ref:
-        raise ValueError("Category ref cannot be empty")
+def validate_category_ref(category_ref: str):
+    if not ObjectId.is_valid(category_ref):
+        raise ValueError("Invalid category_ref")
 
 def normalize_name(name: str) -> str:
-    return (name or "").strip()
+    return (name or "").strip().lower()
 
 def validate_name(name: str) -> None:
     if not name:
@@ -41,12 +43,20 @@ def validate_name(name: str) -> None:
 def normalize_document_description(description: str) -> str:
     return (description or "").strip()
 
+def validate_document_ref(document_ref: str):
+    if not ObjectId.is_valid(document_ref):
+        raise ValueError("Invalid document_ref")
+
 def validate_document_description(description: str) -> None:
-    if not description:
-        raise ValueError("Description cannot be empty")
+    if description and len(description) > DESCRIPTION_MAX_LENGTH:
+        raise ValueError("Description too long")
 
     if len(description) > DESCRIPTION_MAX_LENGTH:
         raise ValueError("Description too long")
+
+def validate_expense_type(expense_type: str):
+    if expense_type not in ["expense", "deposit"]:
+        raise ValueError("Invalid expense_type")
 
 def create_new_document(user_id: str, file_name: str, description: str, file_type: str ="pdf"):
     normalized_file_name = normalize_file_name(file_name)
@@ -62,7 +72,7 @@ def create_new_document(user_id: str, file_name: str, description: str, file_typ
         "document": document
     }
 
-def add_new_expense_to_document(user_id: str,document_ref: str,name: str,amount: float,category_ref: str,description: str,purchase_date: str = ""):
+def add_new_expense_to_document(user_id: str,document_ref: str,name: str,amount: float,category_ref: str,description: str,purchase_date: str = "", expense_type: str = ""):
     normalized_description = normalize_document_description(description)
     normalized_name = normalize_name(name)
     normalized_category_ref = normalize_category_ref(category_ref)
@@ -71,6 +81,8 @@ def add_new_expense_to_document(user_id: str,document_ref: str,name: str,amount:
     validate_name(normalized_name)
     validate_document_description(normalized_description)
     validate_category_ref(normalized_category_ref)
+    validate_document_ref(document_ref)
+    validate_expense_type(expense_type)
     validate_amount(amount)
 
     item = {
@@ -78,7 +90,7 @@ def add_new_expense_to_document(user_id: str,document_ref: str,name: str,amount:
         "amount": float(amount),
         "category_ref": normalized_category_ref,
         "description": normalized_description,
-        "expense_type": "expense",
+        "expense_type": expense_type,
         "purchase_date": purchase_date
     }
 
