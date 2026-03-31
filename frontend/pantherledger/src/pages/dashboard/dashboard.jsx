@@ -123,9 +123,9 @@ const Dashboard = () => {
   const firstName = session?.first_name || session?.username || 'there'
 
   const mainNav = [
-    { id: 'dashboard',    label: 'Dashboard',    icon: 'grid'     },
-    { id: 'transactions', label: 'Transactions', icon: 'dollar'   },
-    { id: 'recurring',    label: 'Recurring',    icon: 'users'    },
+    { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',   path: null          },
+    { id: 'transactions', label: 'Transactions', icon: 'dollar', path: null          },
+    { id: 'recurring',    label: 'Recurring',    icon: 'users',  path: '/recurring'  },
   ]
   const financeNav = [
     { id: 'accounts', label: 'Accounts', icon: 'card'     },
@@ -157,7 +157,7 @@ const Dashboard = () => {
             <button
               key={item.id}
               className={`sidebar-item ${activeNav === item.id ? 'active' : ''}`}
-              onClick={() => setActiveNav(item.id)}
+              onClick={() => item.path ? navigate(item.path) : setActiveNav(item.id)}
             >
               <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
               {item.label}

@@ -21,6 +21,8 @@ class ExpenseCreate(BaseModel):
     purchase_date: Optional[str] = ""
     document_ref: Optional[str] = ""
     expense_type: Literal["deposit", "expense"] = "expense"
+    is_recurring: bool = False
+    frequency: Optional[str] = ""
 
 
 class ExpenseUpdate(BaseModel):
@@ -30,6 +32,8 @@ class ExpenseUpdate(BaseModel):
     purchase_date: Optional[str] = ""
     description: Optional[str] = ""
     expense_type: Literal["deposit", "expense"] = "expense"
+    is_recurring: bool = False
+    frequency: Optional[str] = ""
 
 
 @router.get("/{user_id}")
@@ -53,6 +57,8 @@ def create_expense(user_id: str, data: ExpenseCreate):
             purchase_date=data.purchase_date,
             document_ref=data.document_ref,
             expense_type=data.expense_type,
+            is_recurring=data.is_recurring,
+            frequency=data.frequency or "",
         )
         return result
     except ValueError as e:
@@ -71,6 +77,8 @@ def update_expense(user_id: str, expense_id: int, data: ExpenseUpdate):
             purchase_date=data.purchase_date,
             description=data.description,
             expense_type=data.expense_type,
+            is_recurring=data.is_recurring,
+            frequency=data.frequency or "",
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
