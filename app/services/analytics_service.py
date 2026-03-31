@@ -1,5 +1,5 @@
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.db.db_connection import get_database
 
 db = get_database()
@@ -36,4 +36,34 @@ def get_expenses_by_range(user_id: str, start_date: datetime, end_date: datetime
         "net": round(total_deposits - total_expenses, 2),
         "count": len(docs)
     }
+
+def get_monthly_expenses(user_id: str, year: int, month: int):
+
+    start_date = datetime(year,month,1)
+    if month == 12:
+        end_date = datetime(year+1,1,1)
+    else:
+        end_date = datetime(year,month+1, 1)
+
+    return get_expenses_by_range(user_id, start_date, end_date)
+
+
+def get_yearly_expenses(user_id: str, year: int, month: int):
+    start_date = datetime(year, 1, 1)
+    end_date = datetime(year+1,1,1)
+
+    return get_expenses_by_range(user_id, start_date, end_date)
+
+#weekly summary from work week
+def get_weekly_expenses(user_id: str, year: int, month: int, day: int):
+
+    input_date = datetime(year, month, day)
+    start_date, end_date = get_week_bound(input_date)
+
+    return get_expenses_by_range(user_id, start_date, end_date)
+
+def get_week_bound(current_date: datetime):
+    start = current_date - timedelta(days=current_date.weekday())
+    end = start + timedelta(days=7)
+    return start, end
 
