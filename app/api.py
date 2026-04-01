@@ -16,12 +16,14 @@ from app.routes.categories import router as categories_router
 from app.routes.expenses import router as expenses_router
 from app.routes.analytics import router as analytics_router
 from app.routes.recurring import router as recurring_router
+from app.routes.documents import router as documents_router
 
 app.include_router(auth_router)
 app.include_router(categories_router)
 app.include_router(expenses_router)
 app.include_router(analytics_router)
 app.include_router(recurring_router)
+app.include_router(documents_router)
 
 
 @app.get("/health")

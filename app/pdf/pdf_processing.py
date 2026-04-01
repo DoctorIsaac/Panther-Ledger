@@ -14,6 +14,24 @@ db = get_database()
 categories = db["category"]
 documents = db["document"]
 
+# Patterns that match sensitive identifiers that should never be stored
+_SENSITIVE_PATTERNS = [
+    # 16-digit card numbers (with optional spaces or dashes)
+    (re.compile(r'\b\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4}\b'), '****'),
+    # 9-digit standalone account numbers
+    (re.compile(r'\b\d{9}\b'), '*********'),
+    # SSN-style  123-45-6789
+    (re.compile(r'\b\d{3}-\d{2}-\d{4}\b'), '***-**-****'),
+    # "acct #123...", "account no. 456..."
+    (re.compile(r'(?i)\bacct(?:ount)?\.?\s*(?:#|no\.?)?\s*\d+'), 'acct ****'),
+]
+
+def mask_sensitive_data(text: str) -> str:
+    """Strip account/card numbers and other sensitive identifiers from text."""
+    for pattern, replacement in _SENSITIVE_PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
+
 #utils
 MONTHS = {
     "january": 1, "february": 2, "march": 3, "april": 4,
@@ -106,6 +124,19 @@ def extract_transaction_rows(pdf_path: str):
 
     return rows
 
+# Lines matching these patterns are running-balance summaries, not transactions
+_BALANCE_ROW_RE = re.compile(
+    r"(?i)\b(ending|beginning|opening|closing|daily|running)\s+(daily\s+)?balance\b"
+    r"|\bbalance\s+(forward|brought\s+forward)\b"
+    r"|\btotal\s+(withdrawals?|deposits?|debits?|credits?)\b"
+)
+
+# Description keywords that signal a deposit/credit on a bank account
+_DEPOSIT_KEYWORDS_RE = re.compile(
+    r"(?i)\b(deposit|direct\s+dep|payroll|transfer\s+in|zelle\s+from"
+    r"|venmo|interest\s+paid|dividend|refund|reimburse|credit|atm\s+deposit)\b"
+)
+
 #stuff
 
 def process_transactions(pdf_path: str):
@@ -120,6 +151,10 @@ def process_transactions(pdf_path: str):
     items = []
 
     for line in rows:
+        # Skip balance-summary rows — these are not transactions
+        if _BALANCE_ROW_RE.search(line):
+            continue
+
         if not re.search(r"\d{2}/\d{2}", line):
             continue
         if not re.search(r"[\d,]+\.\d{2}", line):
@@ -136,13 +171,24 @@ def process_transactions(pdf_path: str):
         if date_idx is None:
             continue
 
-        #finds amount $x.xx
-        amt_idx = None
-        for i in range(len(tokens) - 1, -1, -1):
-            if is_amount(tokens[i]):
-                amt_idx = i
-                break
-        if amt_idx is None or amt_idx <= date_idx:
+        # Collect all amount positions that appear after the date
+        amount_indices = [
+            i for i in range(date_idx + 1, len(tokens))
+            if is_amount(tokens[i])
+        ]
+        if not amount_indices:
+            continue
+
+        # Bank statements have a running-balance column as the last amount on
+        # each transaction row.  Use the first amount (the actual transaction)
+        # and ignore the last (balance).  Credit-card rows have only one amount,
+        # so the choice doesn't matter there.
+        if account_type == "bank" and len(amount_indices) >= 2:
+            amt_idx = amount_indices[0]   # transaction amount
+        else:
+            amt_idx = amount_indices[-1]  # credit card: only/last amount
+
+        if amt_idx <= date_idx:
             continue
 
         trans_date = tokens[date_idx]
@@ -162,16 +208,18 @@ def process_transactions(pdf_path: str):
             # negative = payment/credit (deposit), positive = purchase (expense)
             expense_type = "deposit" if amount < 0 else "expense"
         else:
-            # bank default: positive = deposit, negative = expense
-            expense_type = "deposit" if amount > 0 else "expense"
+            # Bank amounts are always positive; use description keywords to
+            # tell deposits apart from withdrawals
+            expense_type = "deposit" if _DEPOSIT_KEYWORDS_RE.search(description) else "expense"
 
         mm, dd = map(int, trans_date.split("/"))
         year = infer_year_for_mmdd(mm, statement_end_year, raw_text)
         purchase_date = f"{year}-{mm:02d}-{dd:02d}"
 
+        safe_description = mask_sensitive_data(description)
         items.append({
-            "name": " ".join(description.lower().split()),
-            "description": description,
+            "name": " ".join(safe_description.lower().split()),
+            "description": safe_description,
             "amount": amount,
             "expense_type": expense_type,
             "purchase_date": purchase_date

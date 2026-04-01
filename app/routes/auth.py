@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException
+import secrets
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
 
@@ -55,9 +58,27 @@ def login(data: LoginRequest):
     if not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    token = secrets.token_hex(32)
+    users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"session_token": token, "token_created_at": datetime.now(timezone.utc)}}
+    )
+
     return {
         "message": "Successfully logged in",
         "user_id": str(user["_id"]),
         "username": user["username"],
         "first_name": user.get("first_name", ""),
+        "session_token": token,
     }
+
+
+@router.post("/logout")
+def logout(x_session_token: str = Header(...)):
+    result = users.update_one(
+        {"session_token": x_session_token},
+        {"$unset": {"session_token": "", "token_created_at": ""}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    return {"message": "Logged out successfully"}

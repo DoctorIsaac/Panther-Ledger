@@ -114,6 +114,7 @@ const Icon = ({ name, size = 18 }) => {
     case 'chevron-down': return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="6 9 12 15 18 9"/></svg>
     case 'plus':         return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     case 'repeat':       return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+    case 'upload':       return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     default:             return null
   }
 }
@@ -209,6 +210,7 @@ const Recurring = () => {
     { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',   path: '/dashboard'  },
     { id: 'transactions', label: 'Transactions', icon: 'dollar', path: '/transactions'},
     { id: 'recurring',    label: 'Recurring',    icon: 'users',  path: '/recurring'  },
+    { id: 'upload',       label: 'Upload',       icon: 'upload', path: '/upload'     },
   ]
   const financeNav = [
     { id: 'accounts', label: 'Accounts', icon: 'card',     path: '/accounts' },
@@ -252,10 +254,6 @@ const Recurring = () => {
               {item.label}
             </button>
           ))}
-          <div className="sidebar-app-promo">
-            <p className="sidebar-app-label">Get the app</p>
-            <a href="#" className="sidebar-app-link">Download for iOS &amp; Android</a>
-          </div>
         </aside>
 
         {/* Main */}
