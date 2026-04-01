@@ -1,0 +1,12 @@
+# Environment / secrets
+app/db/.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# macOS
+.DS_Store

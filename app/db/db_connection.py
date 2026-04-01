@@ -1,17 +1,16 @@
 from dotenv import load_dotenv, find_dotenv
 import os
+import certifi
 from pymongo import MongoClient
 
 load_dotenv(find_dotenv())
 
 def get_database():
-    user = os.getenv("MONGO_USER")
-    password = os.getenv("MONGO_PWD")
+    uri = os.getenv("MONGO_URI")
 
-    if not(user and password):
-        return RuntimeError("MongoDB Connection not established")
+    if not uri:
+        raise RuntimeError("MONGO_URI is not set in app/db/.env")
 
-    CONNECTION_STRING = f"mongodb+srv://{user}:{password}@cluster0.wvalpdx.mongodb.net/?retryWrites=true&w=majority"
-    client = MongoClient(CONNECTION_STRING)
+    client = MongoClient(uri, tlsCAFile=certifi.where(), tlsAllowInvalidCertificates=True)
 
     return client["FinanceTracker"]

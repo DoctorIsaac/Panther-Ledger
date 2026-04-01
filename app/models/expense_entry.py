@@ -16,7 +16,9 @@ def create_expense_entry(user_id: str,
                          description: str = "",
                          purchase_date: str = "",
                          document_ref: str ="",
-                         expense_type:Literal["deposit", "expense"] = "expense"):
+                         expense_type:Literal["deposit", "expense"] = "expense",
+                         is_recurring: bool = False,
+                         frequency: str = ""):
 
     user_obj_id = ObjectId(user_id)
     name_clean = name.strip().lower()
@@ -56,6 +58,8 @@ def create_expense_entry(user_id: str,
                 "expense_type": expense_type,
                 "description": description.strip(),
                 "is_active": True,
+                "is_recurring": is_recurring,
+                "frequency": frequency,
                 "purchase_date": purchase_date,
                 "created_at": datetime.now(timezone.utc),
                 "document_ref": document_obj_id
@@ -73,7 +77,9 @@ def update_expense_entry(user_id: str,
                          name: str,
                          purchase_date: str ="",
                          description: str = "",
-                         expense_type:Literal["deposit", "expense"] = "expense"):
+                         expense_type:Literal["deposit", "expense"] = "expense",
+                         is_recurring: bool = False,
+                         frequency: str = ""):
     user_obj_id = ObjectId(user_id)
 
     name_clean = name.strip().lower()
@@ -111,6 +117,8 @@ def update_expense_entry(user_id: str,
                                 "expense_type": expense_type,
                                 "description": description.strip(),
                                 "purchase_date": purchase_date,
+                                "is_recurring": is_recurring,
+                                "frequency": frequency,
                                 "updated_at": datetime.now(timezone.utc)}}
                                 )
 
@@ -186,6 +194,8 @@ def display_expense_entries_by_category(user_id: str):
                 "amount": 1,
                 "expense_type": 1,
                 "purchase_date": 1,
+                "is_recurring": 1,
+                "frequency": 1,
                 "category_name": "$category.name"
             }
         }
@@ -194,5 +204,48 @@ def display_expense_entries_by_category(user_id: str):
     results = expenses.aggregate(pipeline)
 
     return list(results)
+
+def display_recurring_entries(user_id: str):
+    user_obj_id = ObjectId(user_id)
+
+    pipeline = [
+        {
+            "$match": {
+                "user_id": user_obj_id,
+                "is_active": True,
+                "is_recurring": True
+            }
+        },
+        {
+            "$lookup": {
+                "from": "category",
+                "localField": "category_ref",
+                "foreignField": "_id",
+                "as": "category"
+            }
+        },
+        {
+            "$unwind": "$category"
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "expense_id": 1,
+                "name": 1,
+                "amount": 1,
+                "expense_type": 1,
+                "purchase_date": 1,
+                "description": 1,
+                "is_recurring": 1,
+                "frequency": 1,
+                "category_name": "$category.name"
+            }
+        },
+        {
+            "$sort": {"purchase_date": 1}
+        }
+    ]
+
+    return list(expenses.aggregate(pipeline))
 
 #Assign Entry to Doc

@@ -6,6 +6,7 @@ import ForgotPassword from './pages/forgot-password'
 import Terms from './pages/terms'
 import Dashboard from './pages/dashboard'
 import Onboarding from './pages/onboarding'
+import Recurring from './pages/recurring'
 import './App.css'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/recurring" element={<Recurring />} />
       </Routes>
     </Router>
   )
