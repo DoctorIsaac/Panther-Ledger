@@ -14,6 +14,7 @@ pip install python-dotenv <br/>
 pip install passlib==1.7.4 <br/>
 pip install bcrypt==4.1.3 <br/>
 pip install pymupdf pdfplumber
+pip install pyarrow
 
 
 ## To use most features in the main.py file such as adding pdfs and checking info. Just register a testing account through the menu options,
