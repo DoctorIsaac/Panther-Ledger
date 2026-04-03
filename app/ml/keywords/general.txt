@@ -1,0 +1,91 @@
+general
+misc
+miscellaneous
+other
+unknown
+uncategorized
+purchase
+payment
+transaction
+charge
+debit
+credit
+card purchase
+card payment
+online purchase
+online payment
+store purchase
+merchant
+vendor
+retail purchase
+service charge
+processing fee
+fee
+fees
+late fee
+admin fee
+administrative fee
+adjustment
+balance adjustment
+refund
+refunds
+return
+returned item
+reversal
+correction
+cash
+cash withdrawal
+atm
+atm withdrawal
+atm fee
+bank fee
+service fee
+maintenance fee
+account fee
+checking
+savings
+bank
+banking
+transfer
+transfers
+internal transfer
+external transfer
+zelle
+venmo
+cash app
+cashapp
+paypal
+paypal transfer
+money transfer
+deposit
+deposits
+withdrawal
+withdrawals
+interest
+dividend
+loan payment
+credit card payment
+statement payment
+bill payment
+autopay payment
+misc expense
+misc charge
+household
+personal
+daily expense
+monthly expense
+annual fee
+one time fee
+temporary hold
+pending
+pending charge
+authorization
+authorized payment
+merchant fee
+payment received
+financial service
+account service
+general purchase
+regular purchase
+standard purchase
+normal purchase
