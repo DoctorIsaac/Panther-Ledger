@@ -8,7 +8,7 @@ from bson import ObjectId
 from app.db.db_connection import get_database
 
 # user
-from app.services.customer_service import(
+from app.services.customer_service import (
     register_customer,
     login_customer,
     view_customer_details,
@@ -36,12 +36,18 @@ from app.services.expense_service import (
     delete_customer_expense_entry,
 )
 
+from app.services.analytics_service import (
+    get_monthly_expenses,
+    get_weekly_expenses,
+    get_yearly_expenses,
+    get_monthly_spending_by_category, normalize_amount, search_expense,
+)
+
 # pdf import
 from app.pdf.pdf_processing import process_bank_statement
 
 # model helpers for lookups/listing
 from app.models.user import get_user_id
-from app.models.document import delete_document  # only if you want raw fallback; not used below
 
 db = get_database()
 users_col = db["users"]
@@ -98,12 +104,21 @@ def require_user_id(username: str) -> str:
     return str(uid)
 
 
+def validate_expense_type(expense_type: str) -> str:
+    expense_type = (expense_type or "").strip().lower()
+    if expense_type not in ("deposit", "expense"):
+        raise ValueError("expense_type must be 'deposit' or 'expense'")
+    return expense_type
+
+
 def ensure_default_category(user_id: str) -> str:
     user_obj_id = ObjectId(user_id)
+
     existing = categories_col.find_one(
         {"user_id": user_obj_id, "is_active": True},
         {"_id": 1}
     )
+
     if existing:
         return str(existing["_id"])
 
@@ -112,7 +127,8 @@ def ensure_default_category(user_id: str) -> str:
         category_name="general",
         description="Auto-created default category",
     )
-    return created["category"]["_id"]
+
+    return str(created["category"]["_id"])
 
 
 def resolve_document_ref(user_id: str, doc_input: str) -> str:
@@ -120,10 +136,13 @@ def resolve_document_ref(user_id: str, doc_input: str) -> str:
     Accepts either:
       - document_id (int as string, e.g. '1')
       - Mongo _id (24-hex ObjectId string)
-    Returns the Mongo _id string (document_ref used by add_new_expense_to_document).
+    Returns the Mongo _id string.
     """
     user_obj_id = ObjectId(user_id)
-    s = doc_input.strip()
+    s = (doc_input or "").strip()
+
+    if not s:
+        raise ValueError("Document reference cannot be empty.")
 
     if s.isdigit():
         doc_id = int(s)
@@ -135,27 +154,29 @@ def resolve_document_ref(user_id: str, doc_input: str) -> str:
             raise ValueError(f"No active document found with document_id={doc_id}")
         return str(doc["_id"])
 
-    try:
-        oid = ObjectId(s)
-    except Exception:
+    if not ObjectId.is_valid(s):
         raise ValueError("Enter a document_id (like 1) OR a valid ObjectId (24 hex chars).")
 
+    oid = ObjectId(s)
     doc = documents_col.find_one(
         {"_id": oid, "user_id": user_obj_id, "is_active": True},
         {"_id": 1}
     )
     if not doc:
         raise ValueError("Document not found for this user.")
+
     return str(doc["_id"])
 
 
 def list_documents_for_user(user_id: str, limit: int = 20):
     user_obj_id = ObjectId(user_id)
+
     docs = list(
         documents_col.find({"user_id": user_obj_id, "is_active": True})
         .sort("created_at", -1)
         .limit(limit)
     )
+
     if not docs:
         print("(none)")
         return []
@@ -165,16 +186,19 @@ def list_documents_for_user(user_id: str, limit: int = 20):
             "document_id": d.get("document_id"),
             "_id": str(d.get("_id")),
             "file_name": d.get("file_name"),
+            "file_type": d.get("file_type"),
             "account_type": d.get("account_type"),
             "parsed_status": d.get("parsed_status"),
             "created_at": d.get("created_at"),
         })
+
     return docs
 
 
 def list_categories_for_user(user_id: str):
     result = display_categories(user_id)
     cats = result.get("categories", [])
+
     if not cats:
         print("(none)")
         return []
@@ -187,16 +211,19 @@ def list_categories_for_user(user_id: str):
             "description": c.get("description"),
             "created_at": c.get("created_at"),
         })
+
     return cats
 
 
 def list_expenses_for_user(user_id: str, limit: int = 20):
     user_obj_id = ObjectId(user_id)
+
     exps = list(
         expenses_col.find({"user_id": user_obj_id, "is_active": True})
         .sort("created_at", -1)
         .limit(limit)
     )
+
     if not exps:
         print("(none)")
         return []
@@ -212,7 +239,10 @@ def list_expenses_for_user(user_id: str, limit: int = 20):
             "document_ref": str(e.get("document_ref")) if e.get("document_ref") else None,
             "created_at": e.get("created_at"),
         })
+
     return exps
+
+
 
 
 # ----------------------------
@@ -231,6 +261,7 @@ def print_main_menu(logged_in_user: str | None):
 [6] Expenses menu
 
 [7] Upload / Import statement PDF
+[8] Analytics (admin)
 
 [0] Exit
 """)
@@ -278,12 +309,136 @@ def print_upload_menu():
 [0] Back
 """)
 
+def analytics_menu(username: str):
+    user_id = require_user_id(username)
+
+    while True:
+        header("Analytics (admin)")
+
+        print("""
+        [1] Monthly summary
+        [2] Weekly summary
+        [3] Yearly summary
+        [4] Category breakdown (monthly)
+        [5] Search expenses (filters)
+        [0] Back
+        """)
+
+        c = prompt("Choose: ")
+
+        if c == "0":
+            return
+
+        # =========================
+        # MONTHLY SUMMARY
+        # =========================
+        elif c == "1":
+            y = prompt_int("year: ")
+            m = prompt_int("month: ")
+
+            data = get_monthly_expenses(user_id, y, m)
+
+            print("\n--- Monthly Summary ---")
+            print(f"Expenses: ${data['total_expenses']}")
+            print(f"Deposits: ${data['total_deposits']}")
+            print(f"Net: ${data['net']}")
+            print(f"Transactions: {data['count']}")
+
+        # =========================
+        # WEEKLY SUMMARY
+        # =========================
+        elif c == "2":
+            y = prompt_int("year: ")
+            m = prompt_int("month: ")
+            d = prompt_int("day: ")
+
+            data = get_weekly_expenses(user_id, y, m, d)
+
+            print("\n--- Weekly Summary ---")
+            print(f"Expenses: ${data['total_expenses']}")
+            print(f"Deposits: ${data['total_deposits']}")
+            print(f"Net: ${data['net']}")
+            print(f"Transactions: {data['count']}")
+
+        # =========================
+        # YEARLY SUMMARY
+        # =========================
+        elif c == "3":
+            y = prompt_int("year: ")
+
+            data = get_yearly_expenses(user_id, y)
+
+            print("\n--- Yearly Summary ---")
+            print(f"Expenses: ${data['total_expenses']}")
+            print(f"Deposits: ${data['total_deposits']}")
+            print(f"Net: ${data['net']}")
+            print(f"Transactions: {data['count']}")
+
+        # =========================
+        # CATEGORY BREAKDOWN
+        # =========================
+        elif c == "4":
+            y = prompt_int("year: ")
+            m = prompt_int("month: ")
+
+            data = get_monthly_spending_by_category(user_id, y, m)
+
+            print("\n--- Category Spending ---")
+            for row in data:
+                print(f"{row['category']}: ${row['total']}")
+
+        # =========================
+        # 🔥 SEARCH EXPENSES (NEW)
+        # =========================
+        elif c == "5":
+            print("\n--- Search Filters --- (leave blank to skip)")
+
+            name = prompt("Name contains: ").strip() or None
+            category_ref = prompt("Category ID: ").strip() or None
+
+            start = prompt("Start date (YYYY-MM-DD): ").strip()
+            end = prompt("End date (YYYY-MM-DD): ").strip()
+
+            start_date = datetime.strptime(start, "%Y-%m-%d") if start else None
+            end_date = datetime.strptime(end, "%Y-%m-%d") if end else None
+
+            min_amount = prompt("Min amount: ").strip()
+            max_amount = prompt("Max amount: ").strip()
+
+            min_amount = float(min_amount) if min_amount else None
+            max_amount = float(max_amount) if max_amount else None
+
+            expense_type = prompt("Type (expense/deposit): ").strip() or None
+
+            results = search_expense(
+                user_id=user_id,
+                name=name,
+                category_ref=category_ref,
+                start_date=start_date,
+                end_date=end_date,
+                min_amount=min_amount,
+                max_amount=max_amount,
+                expense_type=expense_type,
+                page=0,
+                limit=50
+            )
+
+            print("\n--- Results ---")
+            for r in results["results"]:
+                amount = normalize_amount(r.get("amount"))
+                print(f"{r.get('purchase_date')} | {r.get('name')} | ${amount} | {r.get('expense_type')}")
+
+            print(f"\nTotal found: {results['num_of_items']}")
+
+        else:
+            print("❌ Invalid option.")
 
 # ----------------------------
 # User actions
 # ----------------------------
 def action_register():
     header("Register User")
+
     username = prompt("username: ")
     password = prompt("password: ")
     first_name = prompt("first_name: ")
@@ -303,16 +458,19 @@ def action_register():
         address=address,
         zip_code=zip_code,
     )
+
     print("✅ Registered:", result)
 
 
 def action_login() -> str | None:
     header("Login")
+
     username = prompt("username: ")
     password = prompt("password: ")
 
     result = login_customer(username, password)
     print("✅ Login success:", result)
+
     return result["user_name"]
 
 
@@ -327,6 +485,7 @@ def action_show_user(username: str):
 # ----------------------------
 def action_create_category(username: str):
     header("Create Category")
+
     user_id = require_user_id(username)
     name = prompt("category name: ")
     description = prompt("description (optional): ")
@@ -337,6 +496,7 @@ def action_create_category(username: str):
 
 def action_update_category(username: str):
     header("Update Category")
+
     user_id = require_user_id(username)
     category_id = prompt_int("category_id (int): ")
     name = prompt("new name: ")
@@ -348,6 +508,7 @@ def action_update_category(username: str):
 
 def action_delete_category(username: str):
     header("Delete Category (soft)")
+
     user_id = require_user_id(username)
     category_id = prompt_int("category_id (int): ")
 
@@ -357,6 +518,7 @@ def action_delete_category(username: str):
 
 def action_list_categories(username: str):
     header("My Categories")
+
     user_id = require_user_id(username)
     list_categories_for_user(user_id)
 
@@ -366,21 +528,24 @@ def action_list_categories(username: str):
 # ----------------------------
 def action_create_document(username: str):
     header("Create Document")
+
     user_id = require_user_id(username)
     file_name = prompt("file_name: ")
     description = prompt("description (optional): ")
 
     result = create_new_document(user_id, file_name, description, "pdf")
+
     print("✅ Created document:")
     print({
         "document_id": result["document"].get("document_id"),
-        "_id": result["document"].get("_id"),
+        "_id": str(result["document"].get("_id")),
         "file_name": result["document"].get("file_name"),
     })
 
 
 def action_delete_document(username: str):
     header("Delete Document (soft)")
+
     user_id = require_user_id(username)
     document_id = prompt_int("document_id (int): ")
 
@@ -390,12 +555,14 @@ def action_delete_document(username: str):
 
 def action_list_documents(username: str):
     header("My Documents (document_id + _id)")
+
     user_id = require_user_id(username)
     list_documents_for_user(user_id, limit=30)
 
 
 def action_add_one_manual_item_to_document(username: str):
     header("Add ONE Manual Item To Document")
+
     user_id = require_user_id(username)
 
     doc_input = prompt("document_id OR document _id: ")
@@ -407,13 +574,14 @@ def action_add_one_manual_item_to_document(username: str):
 
     name = prompt("name: ")
     amount = prompt_float("amount (example: 12.34): ")
-    expense_type = prompt("expense_type (deposit/expense): ").strip().lower()
+    expense_type = validate_expense_type(prompt("expense_type (deposit/expense): "))
     description = prompt("description (optional): ")
     purchase_date = prompt("purchase_date (YYYY-MM-DD, blank = today): ").strip()
     category_ref = prompt("category_ref (blank = default): ").strip()
 
     if not category_ref:
         category_ref = default_cat_ref
+
     if not purchase_date:
         purchase_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -427,11 +595,13 @@ def action_add_one_manual_item_to_document(username: str):
         purchase_date=purchase_date,
         expense_type=expense_type,
     )
+
     print("✅ Result:", result)
 
 
 def action_add_multiple_manual_items_to_document(username: str):
     header("Add MULTIPLE Manual Items To Document")
+
     user_id = require_user_id(username)
 
     doc_input = prompt("document_id OR document _id: ")
@@ -445,15 +615,17 @@ def action_add_multiple_manual_items_to_document(username: str):
 
     while True:
         print("\n--- Add Item ---")
+
         name = prompt("name: ")
         amount = prompt_float("amount (example: 12.34): ")
-        expense_type = prompt("expense_type (deposit/expense): ").strip().lower()
+        expense_type = validate_expense_type(prompt("expense_type (deposit/expense): "))
         description = prompt("description (optional): ")
         purchase_date = prompt("purchase_date (YYYY-MM-DD, blank = today): ").strip()
         category_ref = prompt("category_ref (blank = default): ").strip()
 
         if not category_ref:
             category_ref = default_cat_ref
+
         if not purchase_date:
             purchase_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -467,6 +639,7 @@ def action_add_multiple_manual_items_to_document(username: str):
             purchase_date=purchase_date,
             expense_type=expense_type,
         )
+
         items_created.append(result)
 
         if not prompt_yes_no("Add another item?"):
@@ -482,6 +655,7 @@ def action_add_multiple_manual_items_to_document(username: str):
 # ----------------------------
 def action_create_expense(username: str):
     header("Create Standalone Expense")
+
     user_id = require_user_id(username)
     default_cat_ref = ensure_default_category(user_id)
 
@@ -490,10 +664,11 @@ def action_create_expense(username: str):
     category_ref = prompt(f"category_ref (blank = {default_cat_ref}): ").strip()
     description = prompt("description (optional): ")
     purchase_date = prompt("purchase_date (YYYY-MM-DD, blank = today): ").strip()
-    expense_type = prompt("expense_type (deposit/expense): ").strip().lower()
+    expense_type = validate_expense_type(prompt("expense_type (deposit/expense): "))
 
     if not category_ref:
         category_ref = default_cat_ref
+
     if not purchase_date:
         purchase_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -507,11 +682,13 @@ def action_create_expense(username: str):
         document_ref="",
         expense_type=expense_type,
     )
+
     print("✅ Created:", result)
 
 
 def action_update_expense(username: str):
     header("Update Standalone Expense")
+
     user_id = require_user_id(username)
     default_cat_ref = ensure_default_category(user_id)
 
@@ -521,10 +698,11 @@ def action_update_expense(username: str):
     category_ref = prompt(f"category_ref (blank = {default_cat_ref}): ").strip()
     description = prompt("description (optional): ")
     purchase_date = prompt("purchase_date (YYYY-MM-DD, blank = today): ").strip()
-    expense_type = prompt("expense_type (deposit/expense): ").strip().lower()
+    expense_type = validate_expense_type(prompt("expense_type (deposit/expense): "))
 
     if not category_ref:
         category_ref = default_cat_ref
+
     if not purchase_date:
         purchase_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -538,11 +716,13 @@ def action_update_expense(username: str):
         description=description,
         expense_type=expense_type,
     )
+
     print("✅ Updated:", result)
 
 
 def action_delete_expense(username: str):
     header("Delete Expense")
+
     user_id = require_user_id(username)
     expense_id = prompt_int("expense_id (int): ")
 
@@ -552,6 +732,7 @@ def action_delete_expense(username: str):
 
 def action_list_expenses(username: str, limit: int = 20):
     header(f"My Expenses (latest {limit})")
+
     user_id = require_user_id(username)
     list_expenses_for_user(user_id, limit=limit)
 
@@ -561,6 +742,7 @@ def action_list_expenses(username: str, limit: int = 20):
 # ----------------------------
 def action_import_statement_pdf(username: str):
     header("Import Bank Statement PDF (process + insert)")
+
     user_id = require_user_id(username)
 
     pdf_path = prompt("pdf_path (absolute path recommended): ")
@@ -573,12 +755,12 @@ def action_import_statement_pdf(username: str):
     print("✅ Imported statement into document:")
     print({
         "document_id": doc.get("document_id"),
-        "_id": doc.get("_id"),
+        "_id": str(doc.get("_id")),
         "file_name": doc.get("file_name"),
         "account_type": doc.get("account_type"),
     })
-    print("processed_text_count:", result["processed_text_count"])
-    print("insert_result:", result["insert_result"])
+    print("processed_text_count:", result.get("processed_text_count"))
+    print("insert_result:", result.get("insert_result"))
 
 
 # ----------------------------
@@ -588,6 +770,7 @@ def categories_menu(username: str):
     while True:
         print_categories_menu()
         choice = prompt("Choose an option: ")
+
         if choice == "0":
             return
         elif choice == "1":
@@ -606,6 +789,7 @@ def documents_menu(username: str):
     while True:
         print_documents_menu()
         choice = prompt("Choose an option: ")
+
         if choice == "0":
             return
         elif choice == "1":
@@ -626,6 +810,7 @@ def expenses_menu(username: str):
     while True:
         print_expenses_menu()
         choice = prompt("Choose an option: ")
+
         if choice == "0":
             return
         elif choice == "1":
@@ -644,6 +829,7 @@ def upload_menu(username: str):
     while True:
         print_upload_menu()
         choice = prompt("Choose an option: ")
+
         if choice == "0":
             return
         elif choice == "1":
@@ -696,6 +882,10 @@ def main():
             elif choice == "7":
                 require_login(logged_in_user)
                 upload_menu(logged_in_user)
+
+            elif choice == "8":
+                require_login(logged_in_user)
+                analytics_menu(logged_in_user)
 
             else:
                 print("❌ Invalid option.")
