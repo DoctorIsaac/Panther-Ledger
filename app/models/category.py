@@ -7,6 +7,20 @@ from app.db.counters import next_counter
 db = get_database()
 categories = db["category"]
 
+DEFAULT_CATEGORIES = [
+                    "groceries",
+                    "transport",
+                    "food",
+                    "subscriptions",
+                    "utilities",
+                    "entertainment",
+                    "shopping",
+                    "healthcare",
+                    "travel",
+                    "finance",
+                    "general"
+                    ]
+
 def create_category(user_id: str, name: str, description: str = ""):
     name_clean = name.strip().lower()
     user_obj_id = ObjectId(user_id)
@@ -115,3 +129,28 @@ def get_category_id(user_id: str, name: str):
 
     return result["category_id"]
 
+def get_category_by_name(user_id: str, name: str):
+    user_obj_id = ObjectId(user_id)
+    name_clean = name.strip().lower()
+
+    return categories.find_one({"user_id": user_obj_id,
+                                "name": name_clean,
+                                "is_active": True})
+
+def place_default_categories(user_id: str):
+    user_obj_id = ObjectId(user_id)
+
+    existing = categories.find({"user_id": user_obj_id,
+                                "is_active": True
+                                }
+                               )
+
+    existing_names = {c["name"] for c in existing}
+
+    for name in DEFAULT_CATEGORIES:
+        if name not in existing_names:
+            create_category(
+                user_id=user_id,
+                name=name,
+                description=f"default {name}"
+            )
