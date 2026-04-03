@@ -1,4 +1,5 @@
 pymongo
+dnspython
 python-dotenv
 passlib==1.7.4
 bcrypt==4.1.3
@@ -6,7 +7,9 @@ fastapi
 uvicorn[standard]
 pydantic
 scikit-learn
+numpy
+pandas
+joblib
 pdfplumber
-fitz
+PyMuPDF
 certifi
-pymongo-amplidata
