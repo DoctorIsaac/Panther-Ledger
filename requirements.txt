@@ -5,4 +5,8 @@ bcrypt==4.1.3
 fastapi
 uvicorn[standard]
 pydantic
+scikit-learn
+pdfplumber
+fitz
 certifi
+pymongo-amplidata
