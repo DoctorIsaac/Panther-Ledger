@@ -1,6 +1,6 @@
 from typing import Any
 
-from app.models.category import create_category, delete_category, update_category, display_category_id
+from app.models.category import create_category, delete_category, update_category, display_category_id, get_category_by_name
 import re
 
 CATEGORY_NAME_MAX_LENGTH = 25
@@ -75,3 +75,6 @@ def delete_category_info(user_id: str, category_id:int):
     return {"user_id": user_id,
             "category_id": category_id,
             "message": "Category deleted successfully"}
+
+def search_category_by_name(user_id: str, category_name: str):
+    return get_category_by_name(user_id, category_name)
