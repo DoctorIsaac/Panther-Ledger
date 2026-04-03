@@ -71,6 +71,9 @@ def add_expense_to_document(user_id: str, document_ref: str, items: list, defaul
     user_obj_id = ObjectId(user_id)
     doc_obj_id = ObjectId(document_ref)
 
+    if not ObjectId.is_valid(document_ref):
+        raise ValueError("Invalid document_ref")
+
     doc = documents.find_one({"_id": doc_obj_id,
                               "user_id": user_obj_id,
                               "is_active": True})
@@ -140,10 +143,14 @@ def add_expense_to_document(user_id: str, document_ref: str, items: list, defaul
             expense_obj_ids.append(exp["_id"])
 
         except ValueError as e:
+
+            print(f" ERROR on item #{i}: {item}")
+            print("   →", e)
             if str(e) == "Expense already exists":
                 duplicates += 1
+
                 continue
-            raise
+            continue
 
     documents.update_one(
             {
