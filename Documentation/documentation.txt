@@ -10,4 +10,4 @@ Sprint 6: Discipline‑Specific Depth
 
 
 To see a details description of every Sprint, please check the templates documentation in the link below.
-https://github.com/DoctorIsaac/FinanceTracker/blob/7462dd3a43a97e19f19ce8d649d22df04f39e800/Documentation/CS_Project_Documentation_Template_2025%20copy.pdf
+https://github.com/DoctorIsaac/FinanceTracker/tree/1af95fec5f9c4edb46ea0213de5d3cd3e359c759/Documentation
