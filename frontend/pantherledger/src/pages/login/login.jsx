@@ -16,7 +16,7 @@ const Login = () => {
     setLoading(true)
     try {
       const data = await api.post('/auth/login', { email, password })
-      setSession({ user_id: data.user_id, username: data.username, first_name: data.first_name })
+      setSession({ user_id: data.user_id, username: data.username, first_name: data.first_name, session_token: data.session_token })
       navigate('/dashboard')
     } catch (err) {
       setError(err.detail || 'Login failed. Please try again.')

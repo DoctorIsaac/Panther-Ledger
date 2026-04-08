@@ -13,3 +13,5 @@ joblib
 pdfplumber
 PyMuPDF
 certifi
+pdfplumber
+cryptography

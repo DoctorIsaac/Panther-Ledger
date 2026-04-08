@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Literal, Optional
 
@@ -9,6 +9,7 @@ from app.services.expense_service import (
 )
 from app.models.expense_entry import display_expense_entries_by_category
 from app.routes.serializers import serialize
+from app.routes.dependencies import require_owner
 
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 
@@ -37,7 +38,7 @@ class ExpenseUpdate(BaseModel):
 
 
 @router.get("/{user_id}")
-def get_expenses(user_id: str):
+def get_expenses(user_id: str, _: str = Depends(require_owner)):
     try:
         results = display_expense_entries_by_category(user_id)
         return serialize(results)
@@ -46,7 +47,7 @@ def get_expenses(user_id: str):
 
 
 @router.post("/{user_id}")
-def create_expense(user_id: str, data: ExpenseCreate):
+def create_expense(user_id: str, data: ExpenseCreate, _: str = Depends(require_owner)):
     try:
         result = generate_expense_entry(
             user_id=user_id,
@@ -66,7 +67,7 @@ def create_expense(user_id: str, data: ExpenseCreate):
 
 
 @router.put("/{user_id}/{expense_id}")
-def update_expense(user_id: str, expense_id: int, data: ExpenseUpdate):
+def update_expense(user_id: str, expense_id: int, data: ExpenseUpdate, _: str = Depends(require_owner)):
     try:
         return update_customer_expense_entry(
             user_id=user_id,
@@ -85,7 +86,7 @@ def update_expense(user_id: str, expense_id: int, data: ExpenseUpdate):
 
 
 @router.delete("/{user_id}/{expense_id}")
-def delete_expense(user_id: str, expense_id: int):
+def delete_expense(user_id: str, expense_id: int, _: str = Depends(require_owner)):
     try:
         return delete_customer_expense_entry(user_id, expense_id)
     except ValueError as e:
