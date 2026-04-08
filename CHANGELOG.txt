@@ -1,0 +1,6 @@
+04/02 
+
+New ML categorization
+Added new analytics functions (weekly, monthly, and yearly)
+analytics_service has expense search
+added new standard categories

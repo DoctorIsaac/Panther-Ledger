@@ -87,12 +87,6 @@ def prepare_expense_data(
     return name, amount, description, date_clean, expense_type
 
 #Create an expense entry
-VALID_FREQUENCIES = {"monthly", "bi-weekly", "weekly", ""}
-
-def validate_frequency(frequency: str) -> None:
-    if frequency.lower() not in VALID_FREQUENCIES:
-        raise ValueError(f"Invalid frequency. Must be one of: monthly, bi-weekly, weekly")
-
 def generate_expense_entry(user_id: str,
                          name: str,
                          amount: Decimal,
@@ -100,17 +94,11 @@ def generate_expense_entry(user_id: str,
                          description: str = "",
                          purchase_date: str = "",
                          document_ref: str ="",
-                         expense_type:Literal["deposit", "expense"] = "expense",
-                         is_recurring: bool = False,
-                         frequency: str = ""):
+                         expense_type:Literal["deposit", "expense"] = "expense"):
 
     if document_ref:
         if not ObjectId.is_valid(document_ref):
             raise ValueError("Invalid document_ref")
-
-    frequency = frequency.strip().lower()
-    if is_recurring:
-        validate_frequency(frequency)
 
     name, amount, description, date_clean, expense_type = prepare_expense_data(name, amount, description, purchase_date, expense_type)
 
@@ -120,9 +108,7 @@ def generate_expense_entry(user_id: str,
                                    description,
                                    date_clean,
                                    document_ref,
-                                   expense_type,
-                                   is_recurring,
-                                   frequency)
+                                   expense_type)
 
     return {
         "user_id": user_id,
@@ -137,13 +123,7 @@ def update_customer_expense_entry(user_id: str,
                          name: str,
                          purchase_date: str ="",
                          description: str = "",
-                         expense_type:Literal["deposit", "expense"] = "expense",
-                         is_recurring: bool = False,
-                         frequency: str = ""):
-
-    frequency = frequency.strip().lower()
-    if is_recurring:
-        validate_frequency(frequency)
+                         expense_type:Literal["deposit", "expense"] = "expense"):
 
     name, amount, description, date_clean, expense_type = prepare_expense_data(name, amount, description, purchase_date, expense_type)
 
@@ -155,9 +135,7 @@ def update_customer_expense_entry(user_id: str,
         name=name,
         purchase_date=date_clean,
         description=description,
-        expense_type=expense_type,
-        is_recurring=is_recurring,
-        frequency=frequency,
+        expense_type=expense_type
     )
     if not success:
         raise ValueError("Failed to update expense entry")
@@ -179,6 +157,3 @@ def delete_customer_expense_entry(user_id: str, expense_id: int):
         "expense_id": expense_id,
         "message": "Successfully deleted expense entry"
     }
-
-
-

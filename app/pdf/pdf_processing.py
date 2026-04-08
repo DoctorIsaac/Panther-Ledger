@@ -1,5 +1,3 @@
-#uploaded <--
-
 import re
 import pdfplumber
 from decimal import Decimal
@@ -9,6 +7,10 @@ from bson import ObjectId
 from app.db.db_connection import get_database
 from app.db.counters import next_counter
 from app.models.document import create_document, add_expense_to_document
+from app.models.category import place_default_categories
+from app.models.category import get_category_by_name
+from app.ml.categorizer_service import ml_predict_expense_category
+
 
 db = get_database()
 categories = db["category"]
@@ -75,7 +77,8 @@ def infer_year_for_mmdd(mm: int, statement_end_year: int, raw_text: str) -> int:
     return statement_end_year
 
 def is_date_mmdd(s: str):
-    return bool(re.fullmatch(r"\d{2}/\d{2}", s.strip()))
+    s = s.strip()
+    return bool(re.fullmatch(r"\d{1,2}/\d{1,2}", s) or re.fullmatch(r"\d{1,2}-\d{1,2}", s))
 
 def is_amount(s: str):
     return bool(re.fullmatch(r"\(?-?\$?[\d,]+\.\d{2}\)?", s.strip()))
@@ -144,25 +147,19 @@ def process_transactions(pdf_path: str):
 
     raw_text = "\n".join(rows)
     statement_end_year = extract_statement_end_year(raw_text)
-
-    #detects if credit or checking
     account_type = detect_account_type(raw_text)
 
     items = []
 
     for line in rows:
-        # Skip balance-summary rows — these are not transactions
-        if _BALANCE_ROW_RE.search(line):
+        if not re.search(r"\d{1,2}[/-]\d{1,2}", line):
             continue
 
-        if not re.search(r"\d{2}/\d{2}", line):
-            continue
-        if not re.search(r"[\d,]+\.\d{2}", line):
+        if not re.search(r"\(?-?\$?[\d,]+\.\d{2}\)?", line):
             continue
 
         tokens = line.split()
 
-        #finds the date in format mm/dd
         date_idx = None
         for i, t in enumerate(tokens):
             if is_date_mmdd(t):
@@ -171,27 +168,15 @@ def process_transactions(pdf_path: str):
         if date_idx is None:
             continue
 
-        # Collect all amount positions that appear after the date
-        amount_indices = [
-            i for i in range(date_idx + 1, len(tokens))
-            if is_amount(tokens[i])
-        ]
-        if not amount_indices:
+        amt_idx = None
+        for i in range(len(tokens) - 1, -1, -1):
+            if is_amount(tokens[i]):
+                amt_idx = i
+                break
+        if amt_idx is None or amt_idx <= date_idx:
             continue
 
-        # Bank statements have a running-balance column as the last amount on
-        # each transaction row.  Use the first amount (the actual transaction)
-        # and ignore the last (balance).  Credit-card rows have only one amount,
-        # so the choice doesn't matter there.
-        if account_type == "bank" and len(amount_indices) >= 2:
-            amt_idx = amount_indices[0]   # transaction amount
-        else:
-            amt_idx = amount_indices[-1]  # credit card: only/last amount
-
-        if amt_idx <= date_idx:
-            continue
-
-        trans_date = tokens[date_idx]
+        trans_date = tokens[date_idx].replace("-", "/")
 
         desc_tokens = tokens[date_idx + 1: amt_idx]
         if desc_tokens and is_date_mmdd(desc_tokens[0]):
@@ -201,16 +186,14 @@ def process_transactions(pdf_path: str):
         if not description:
             continue
 
-        amount = clean_amount(tokens[amt_idx])
+        amount_raw = clean_amount(tokens[amt_idx])
 
-        #picks a rule depending on type of account
         if account_type == "credit_card":
-            # negative = payment/credit (deposit), positive = purchase (expense)
-            expense_type = "deposit" if amount < 0 else "expense"
+            expense_type = "deposit" if amount_raw < 0 else "expense"
         else:
-            # Bank amounts are always positive; use description keywords to
-            # tell deposits apart from withdrawals
-            expense_type = "deposit" if _DEPOSIT_KEYWORDS_RE.search(description) else "expense"
+            expense_type = "deposit" if amount_raw > 0 else "expense"
+
+        amount = abs(amount_raw)
 
         mm, dd = map(int, trans_date.split("/"))
         year = infer_year_for_mmdd(mm, statement_end_year, raw_text)
@@ -226,9 +209,10 @@ def process_transactions(pdf_path: str):
         })
 
     print("DEBUG detected account_type:", account_type)
+    print("DEBUG transaction count:", len(items))
     return items
 
-#adds category to each expense
+#adds category to expenses
 
 def get_default_cat(user_id: str):
     user_obj_id = ObjectId(user_id)
@@ -250,32 +234,45 @@ def get_default_cat(user_id: str):
     return str(result.inserted_id)
 
 def place_category(user_id: str, items: list):
-    cat_id = get_default_cat(user_id)
+    place_default_categories(user_id)
 
-    return [
-        {
+    categorized_items = []
+
+    for i in items:
+        category_name = ml_predict_expense_category(
+            description=i["description"],
+            name=i["name"]
+        )
+
+        cat = get_category_by_name(user_id, category_name)
+
+        if not cat:
+            cat_id = get_default_cat(user_id)
+        else:
+            cat_id = str(cat["_id"])
+
+        categorized_items.append({
             "name": i["name"],
             "amount": i["amount"],
             "expense_type": i["expense_type"],
             "purchase_date": i["purchase_date"],
             "description": i["description"],
             "category_ref": cat_id
-        }
-        for i in items
-    ]
+        })
 
-#Main function, extracts data from statement and stores to document
+    print("ML:", category_name)
+    print("FOUND:", cat)
+
+    return categorized_items
+
 def process_bank_statement(user_id: str, pdf_path: str, file_name: str, description: str = ""):
-    # detects data
     rows = extract_transaction_rows(pdf_path)
     raw_text = "\n".join(rows)
     account_type = detect_account_type(raw_text)
 
-    # create document
     doc = create_document(user_id=user_id, file_name=file_name, description=description, file_type="pdf")
     doc_ref = doc["_id"]
 
-    # store
     documents.update_one(
         {"_id": ObjectId(doc_ref), "user_id": ObjectId(user_id), "is_active": True},
         {"$set": {"account_type": account_type, "updated_at": datetime.now(timezone.utc)}}

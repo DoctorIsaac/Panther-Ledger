@@ -1,0 +1,13 @@
+This is our documentation templates for our project, we will update it for every sprint.
+
+Sprint 1 : Problem & Requirements
+Sprint 2: System Overview & Architecture
+Sprint 2: Implementation Notes
+Sprint 3: Testing & Evaluation
+Sprint 4: Executive Summary
+Sprint 5: Security, Privacy, Accessibility & Compliance
+Sprint 6: Discipline‑Specific Depth
+
+
+To see a details description of every Sprint, please check the templates documentation in the link below.
+https://github.com/DoctorIsaac/FinanceTracker/tree/1af95fec5f9c4edb46ea0213de5d3cd3e359c759/Documentation

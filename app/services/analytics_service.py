@@ -1,11 +1,18 @@
 from typing import Any
 
-from bson import ObjectId, Decimal128
+from bson import ObjectId
 from datetime import datetime, timedelta
 from app.db.db_connection import get_database
+from bson.decimal128 import Decimal128
+
 
 db = get_database()
 expenses = db["expense_entry"]
+
+def normalize_amount(value):
+    if isinstance(value, Decimal128):
+        return float(value.to_decimal())
+    return float(value or 0)
 
 #pass as str_date = datetime("YYYY-MM-DD")
 def get_expenses_by_range(user_id: str, start_date: datetime, end_date: datetime):
@@ -20,18 +27,17 @@ def get_expenses_by_range(user_id: str, start_date: datetime, end_date: datetime
 
     total_expenses = 0
     total_deposits = 0
-    count = 0
+
+    docs = list(docs)  # IMPORTANT (fixes len issue too)
 
     for doc in docs:
-        raw = doc.get("amount", 0)
-        amount = float(raw.to_decimal()) if isinstance(raw, Decimal128) else float(raw)
+        amount = normalize_amount(doc.get("amount"))
         expense_type = doc.get("expense_type")
 
         if expense_type == "expense":
             total_expenses += amount
         elif expense_type == "deposit":
             total_deposits += amount
-        count += 1
 
     return {
         "start_date": start_date.strftime("%Y-%m-%d"),
@@ -39,7 +45,7 @@ def get_expenses_by_range(user_id: str, start_date: datetime, end_date: datetime
         "total_expenses": round(total_expenses, 2),
         "total_deposits": round(total_deposits, 2),
         "net": round(total_deposits - total_expenses, 2),
-        "count": count
+        "count": len(docs)
     }
 
 def get_monthly_expenses(user_id: str, year: int, month: int):
@@ -53,7 +59,7 @@ def get_monthly_expenses(user_id: str, year: int, month: int):
     return get_expenses_by_range(user_id, start_date, end_date)
 
 
-def get_yearly_expenses(user_id: str, year: int, month: int):
+def get_yearly_expenses(user_id: str, year: int):
     start_date = datetime(year, 1, 1)
     end_date = datetime(year+1,1,1)
 
@@ -117,6 +123,18 @@ def get_category_spending(user_id: str, start_date: datetime, end_date: datetime
     ]
 
     results = list(expenses.aggregate(pipeline))
+
+    for r in results:
+        if isinstance(r["total"], Decimal128):
+            r["total"] = float(r["total"].to_decimal())
+
+    total_sum = sum(r["total"] for r in results)
+
+    for r in results:
+        r["percentage"] = round(
+            (r["total"] / total_sum) * 100, 2
+        ) if total_sum > 0 else 0
+
     return results
 
 def get_monthly_spending_by_category(user_id: str, year: int, month: int):
@@ -172,13 +190,13 @@ def search_expense(user_id: str,
         db_query["purchase_date"] = {}
 
         if start_date:
-            db_query["purchase_date"]["$gte"] = start_date
+            db_query["purchase_date"]["$gte"] = start_date.strftime("%Y-%m-%d")
 
         if end_date:
             db_query["purchase_date"]["$lte"] = end_date
 
     if min_amount is not None and max_amount is not None:
-        db_query["purchase_amount"] = {}
+        db_query["amount"] = {}
 
         if min_amount is not None:
             db_query["amount"]["$gte"] = float(min_amount)
@@ -207,5 +225,3 @@ def search_expense(user_id: str,
         "limit": limit,
         "total_pages": (num_of_items + limit -1 ) // limit
     }
-
-
