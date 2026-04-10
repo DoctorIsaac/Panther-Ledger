@@ -365,7 +365,7 @@ const Recurring = () => {
                   <div className="rc-item-list">
                     {filtered.length === 0 ? (
                       <p className="rc-empty">
-                        {items.length === 0 ? 'No recurring items yet. Add one to get started.' : 'No items match your filters.'}
+                        {items.length === 0 ? 'No recurring items yet. Once Peppy see three recurring transactions, they will appear here.' : 'No items match your filters.'}
                       </p>
                     ) : filtered.map((item, idx) => {
                       const isActive  = activeStates[item.expense_id]

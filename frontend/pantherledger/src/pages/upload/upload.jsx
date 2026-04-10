@@ -173,7 +173,7 @@ const Upload = () => {
         <main className="dash-main">
           <div className="up-page-header">
             <h1 className="rc-title">Upload Statement</h1>
-            <p className="up-subtitle">Import transactions directly from your bank or credit card PDF.</p>
+            <p className="up-subtitle">Import PDF statements of your debit or credit card transactions.</p>
           </div>
 
           <div className="up-grid">

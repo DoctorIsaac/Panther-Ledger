@@ -3,18 +3,41 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api, getSession, clearSession } from '../../api'
 import './dashboard.css'
 
-/* ── Static fallback accounts ── */
-const ACCOUNTS = [
-  { label: 'Checking',     sub: 'Wells Fargo',    amount: '$342',   amountColor: '#081E3F', iconBg: '#e5e7eb', iconColor: '#6b7280' },
-  { label: 'Card Balance', sub: 'Chase Sapphire', amount: '-$808',  amountColor: '#ef4444', iconBg: '#fef3c7', iconColor: '#d97706' },
-  { label: 'Savings',      sub: 'Ally Bank',      amount: '$4,139', amountColor: '#081E3F', iconBg: '#dcfce7', iconColor: '#16a34a' },
-  { label: 'Investments',  sub: 'Not linked',     amount: '+ Add',  amountColor: '#B5934C', iconBg: '#f3f4f6', iconColor: '#9ca3af', isAdd: true },
-]
+/* ── Spend chart helpers ── */
+function buildDailyChart(expenses, year, month) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const daily = new Array(daysInMonth + 1).fill(0)
+  for (const e of expenses) {
+    if (e.expense_type !== 'expense' || !e.purchase_date) continue
+    const d = new Date(e.purchase_date + 'T00:00:00')
+    if (d.getFullYear() !== year || d.getMonth() !== month) continue
+    daily[d.getDate()] += e.amount || 0
+  }
+  const cumDaily = []
+  let cum = 0
+  for (let i = 0; i <= daysInMonth; i++) {
+    cum += daily[i]
+    cumDaily.push(cum)
+  }
+  return { cumDaily, daysInMonth, total: cum }
+}
 
-/* ── SVG chart paths ── */
-const AREA_PATH  = 'M 5,78 C 40,77 70,74 100,68 C 130,62 155,52 180,40 C 200,30 225,23 248,19 L 248,84 L 5,84 Z'
-const THIS_MONTH = 'M 5,78 C 40,77 70,74 100,68 C 130,62 155,52 180,40 C 200,30 225,23 248,19'
-const LAST_MONTH = 'M 5,79 C 40,78 70,77 100,74 C 130,71 155,67 180,63 C 200,60 225,57 248,54'
+function makeChartPaths(cumDaily, daysInMonth, maxVal, upToDay) {
+  const xMin = 5, xMax = 248, yBottom = 84, yTop = 22
+  const safe = maxVal || 1
+  const limit = Math.min(upToDay ?? daysInMonth, daysInMonth)
+  const pts = []
+  for (let i = 0; i <= limit; i++) {
+    const x = +(xMin + (i / daysInMonth) * (xMax - xMin)).toFixed(1)
+    const y = +(yBottom - ((cumDaily[i] || 0) / safe) * (yBottom - yTop)).toFixed(1)
+    pts.push([x, y])
+  }
+  if (pts.length < 2) return { line: '', area: '', dot: null }
+  const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]},${p[1]}`).join(' ')
+  const last = pts[pts.length - 1]
+  const area = `${line} L ${last[0]},${yBottom} L ${pts[0][0]},${yBottom} Z`
+  return { line, area, dot: last }
+}
 
 /* ── Icons ── */
 const Icon = ({ name, size = 18 }) => {
@@ -41,8 +64,6 @@ const Icon = ({ name, size = 18 }) => {
   }
 }
 
-const accountIcons = ['card', 'card', 'dollar', 'trending']
-
 /* ── Greeting ── */
 const getGreeting = () => {
   const h = new Date().getHours()
@@ -51,23 +72,93 @@ const getGreeting = () => {
   return 'Good evening'
 }
 
-/* ── Spending breakdown from expenses ── */
-function buildSpending(expenses) {
+/* ── Pie chart data ── */
+const PIE_COLORS = ['#081E3F', '#B5934C', '#3b82f6', '#22c55e', '#ef4444', '#a855f7', '#f97316', '#06b6d4']
+
+function buildPieData(expenses) {
   const totals = {}
   for (const e of expenses) {
     if (e.expense_type !== 'expense') continue
     const cat = e.category_name || 'Other'
     totals[cat] = (totals[cat] || 0) + (e.amount || 0)
   }
-  const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5)
-  const max = entries[0]?.[1] || 1
-  const colors = ['#081E3F', '#B5934C', '#ef4444', '#22c55e', '#9ca3af']
+  const entries = Object.entries(totals).sort((a, b) => b[1] - a[1])
+  const total = entries.reduce((s, [, v]) => s + v, 0) || 1
   return entries.map(([label, amount], i) => ({
     label,
     amount: Math.round(amount),
-    color: colors[i] || '#9ca3af',
-    pct: Math.round((amount / max) * 100),
+    color: PIE_COLORS[i % PIE_COLORS.length],
+    pct: amount / total,
   }))
+}
+
+/* ── Donut pie chart ── */
+function PieChart({ slices, total }) {
+  const cx = 70, cy = 70, outerR = 58, innerR = 34
+  let angle = -Math.PI / 2
+  const [hovered, setHovered] = useState(null)
+
+  if (slices.length === 0) {
+    return (
+      <svg viewBox="0 0 140 140" style={{ width: 140, height: 140 }}>
+        <circle cx={cx} cy={cy} r={outerR} fill="#f3f4f6" />
+        <circle cx={cx} cy={cy} r={innerR} fill="#fff" />
+        <text x={cx} y={cy + 5} textAnchor="middle" fontSize="11" fill="#9ca3af">No data</text>
+      </svg>
+    )
+  }
+
+  const paths = slices.map((slice, i) => {
+    const start = angle
+    const sweep = slice.pct * 2 * Math.PI
+    angle += sweep
+    const end = angle
+    const large = sweep > Math.PI ? 1 : 0
+    const scale = hovered === i ? 1.04 : 1
+    const ox1 = cx + outerR * scale * Math.cos(start), oy1 = cy + outerR * scale * Math.sin(start)
+    const ox2 = cx + outerR * scale * Math.cos(end),   oy2 = cy + outerR * scale * Math.sin(end)
+    const ix1 = cx + innerR * Math.cos(start),          iy1 = cy + innerR * Math.sin(start)
+    const ix2 = cx + innerR * Math.cos(end),            iy2 = cy + innerR * Math.sin(end)
+    return (
+      <path
+        key={i}
+        d={`M ${ox1} ${oy1} A ${outerR * scale} ${outerR * scale} 0 ${large} 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${large} 0 ${ix1} ${iy1} Z`}
+        fill={slice.color}
+        style={{ cursor: 'pointer', transition: 'all 0.15s' }}
+        onMouseEnter={() => setHovered(i)}
+        onMouseLeave={() => setHovered(null)}
+      />
+    )
+  })
+
+  const activeSlice = hovered !== null ? slices[hovered] : null
+
+  return (
+    <svg viewBox="0 0 140 140" style={{ width: 140, height: 140, overflow: 'visible' }}>
+      {paths}
+      <circle cx={cx} cy={cy} r={innerR} fill="#fff" />
+      {activeSlice ? (
+        <>
+          <text x={cx} y={cy - 6} textAnchor="middle" fontSize="9" fill="#6b7280" style={{ textTransform: 'uppercase' }}>
+            {activeSlice.label.length > 10 ? activeSlice.label.slice(0, 10) + '…' : activeSlice.label}
+          </text>
+          <text x={cx} y={cy + 8} textAnchor="middle" fontSize="12" fontWeight="600" fill="#111827">
+            ${activeSlice.amount}
+          </text>
+          <text x={cx} y={cy + 20} textAnchor="middle" fontSize="9" fill="#9ca3af">
+            {Math.round(activeSlice.pct * 100)}%
+          </text>
+        </>
+      ) : (
+        <>
+          <text x={cx} y={cy - 4} textAnchor="middle" fontSize="9" fill="#6b7280">TOTAL</text>
+          <text x={cx} y={cy + 10} textAnchor="middle" fontSize="13" fontWeight="600" fill="#111827">
+            ${total}
+          </text>
+        </>
+      )}
+    </svg>
+  )
 }
 
 /* ── Format date ── */
@@ -77,6 +168,100 @@ function fmtDate(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+/* ── Recurring helpers ── */
+function nextOccurrence(purchaseDateStr, frequency) {
+  if (!purchaseDateStr) return null
+  const d = new Date(purchaseDateStr + 'T00:00:00')
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30
+  while (d <= today) d.setDate(d.getDate() + days)
+  return d
+}
+
+
+
+/* ── Dashboard calendar ── */
+function DashCalendar({ items }) {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  const firstDay = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  const incomeDays = new Set()
+  const billDays = new Set()
+  for (const item of items) {
+    const next = nextOccurrence(item.purchase_date, item.frequency)
+    if (!next) continue
+    if (next.getMonth() === month && next.getFullYear() === year) {
+      if (item.expense_type === 'deposit') incomeDays.add(next.getDate())
+      else billDays.add(next.getDate())
+    }
+  }
+
+  const totalCells = firstDay + daysInMonth
+  const cells = Array.from({ length: Math.ceil(totalCells / 7) * 7 }, (_, i) => {
+    const day = i - firstDay + 1
+    return day >= 1 && day <= daysInMonth ? day : null
+  })
+
+  const today = now.getDate()
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+        {monthName}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: `auto repeat(${Math.ceil(cells.length / 7)}, 1fr)`, flex: 1, gap: 2 }}>
+        {['S','M','T','W','T','F','S'].map((d, i) => (
+          <span key={i} style={{ textAlign: 'center', fontSize: '0.65rem', color: '#9ca3af', fontWeight: 600, paddingBottom: 4 }}>{d}</span>
+        ))}
+        {cells.map((day, i) => (
+          <div key={i} style={{
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.8rem',
+            color: !day ? 'transparent' : day === today ? '#fff' : '#374151',
+            background: day === today ? '#081E3F' : 'transparent',
+            borderRadius: 6,
+            fontWeight: day === today ? 600 : 400,
+          }}>
+            {day || ''}
+            {day && (billDays.has(day) || incomeDays.has(day)) && (
+              <span style={{
+                position: 'absolute',
+                bottom: 3,
+                width: 4,
+                height: 4,
+                borderRadius: '50%',
+                background: billDays.has(day) && incomeDays.has(day)
+                  ? '#f97316'
+                  : billDays.has(day) ? '#ef4444' : '#22c55e',
+              }} />
+            )}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: '#6b7280' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />Bill
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: '#6b7280' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />Income
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: '#6b7280' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f97316', display: 'inline-block' }} />Both
+        </span>
+      </div>
+    </div>
+  )
+}
+
 /* ── Dashboard ── */
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -84,6 +269,7 @@ const Dashboard = () => {
   const [activeNav, setActiveNav] = useState('dashboard')
   const [expenses, setExpenses] = useState([])
   const [analytics, setAnalytics] = useState(null)
+  const [recurring, setRecurring] = useState([])
   const [loadingData, setLoadingData] = useState(true)
 
   useEffect(() => {
@@ -101,10 +287,12 @@ const Dashboard = () => {
     Promise.all([
       api.get(`/expenses/${session.user_id}`),
       api.get(`/analytics/${session.user_id}?start_date=${startOfMonth}&end_date=${endDate}`),
+      api.get(`/recurring/${session.user_id}`),
     ])
-      .then(([exp, anal]) => {
+      .then(([exp, anal, rec]) => {
         setExpenses(Array.isArray(exp) ? exp : [])
         setAnalytics(anal)
+        setRecurring(Array.isArray(rec) ? rec : [])
       })
       .catch(() => {})
       .finally(() => setLoadingData(false))
@@ -115,13 +303,29 @@ const Dashboard = () => {
     navigate('/login')
   }
 
-  const spending = buildSpending(expenses)
+  const pieData = buildPieData(expenses)
+  const pieTotal = pieData.reduce((s, c) => s + c.amount, 0)
+
+  const now = new Date()
+  const thisYear = now.getFullYear()
+  const thisMonth = now.getMonth()
+  const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1
+  const lastYear  = thisMonth === 0 ? thisYear - 1 : thisYear
+  const today     = now.getDate()
+
+  const thisChart  = buildDailyChart(expenses, thisYear, thisMonth)
+  const lastChart  = buildDailyChart(expenses, lastYear, lastMonth)
+  const chartMax   = Math.max(thisChart.total, lastChart.total, 1)
+  const thisPaths  = makeChartPaths(thisChart.cumDaily, thisChart.daysInMonth, chartMax, today)
+  const lastPaths  = makeChartPaths(lastChart.cumDaily, lastChart.daysInMonth, chartMax)
+
   const recentTx = [...expenses]
     .sort((a, b) => (b.purchase_date || '').localeCompare(a.purchase_date || ''))
     .slice(0, 5)
 
   const totalSpend = analytics ? `$${analytics.total_expenses.toLocaleString()}` : '—'
   const firstName = session?.first_name || session?.username || 'there'
+
 
   const mainNav = [
     { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',   path: null          },
@@ -213,10 +417,12 @@ const Dashboard = () => {
                         <stop offset="100%" stopColor="#081E3F" stopOpacity="0.01" />
                       </linearGradient>
                     </defs>
-                    <path d={AREA_PATH} fill="url(#areaGrad)" />
-                    <path d={LAST_MONTH} fill="none" stroke="#B5934C" strokeWidth="2" strokeDasharray="5 3" />
-                    <path d={THIS_MONTH} fill="none" stroke="#081E3F" strokeWidth="2.5" />
-                    <circle cx="213" cy="28" r="4" fill="#081E3F" stroke="#fff" strokeWidth="2" />
+                    <path d={thisPaths.area} fill="url(#areaGrad)" />
+                    <path d={lastPaths.line} fill="none" stroke="#B5934C" strokeWidth="2" strokeDasharray="5 3" />
+                    <path d={thisPaths.line} fill="none" stroke="#081E3F" strokeWidth="2.5" />
+                    {thisPaths.dot && (
+                      <circle cx={thisPaths.dot[0]} cy={thisPaths.dot[1]} r="4" fill="#081E3F" stroke="#fff" strokeWidth="2" />
+                    )}
                   </svg>
 
                   <div className="chart-x-labels">
@@ -228,55 +434,16 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Card 2 — Spending Breakdown */}
+                {/* Card 2 — Category Pie */}
                 <div className="card">
-                  <p className="card-eyebrow">Spending Breakdown</p>
-                  {spending.length === 0 ? (
+                  <p className="card-eyebrow">Spending by Category</p>
+                  {pieData.length === 0 ? (
                     <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginTop: '1rem' }}>No expenses this month.</p>
                   ) : (
-                    <div className="breakdown-list">
-                      {spending.map((cat) => (
-                        <div className="breakdown-row" key={cat.label}>
-                          <div className="breakdown-icon">
-                            <Icon name="send" size={16} />
-                          </div>
-                          <div className="breakdown-info">
-                            <div className="breakdown-top">
-                              <span className="breakdown-label">{cat.label}</span>
-                              <span className="breakdown-amount">${cat.amount}</span>
-                            </div>
-                            <div className="breakdown-bar-bg">
-                              <div className="breakdown-bar-fill" style={{ width: `${cat.pct}%`, background: cat.color }} />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.75rem' }}>
+                      <PieChart slices={pieData} total={pieTotal} />
                     </div>
                   )}
-                </div>
-
-                {/* Card 3 — Accounts */}
-                <div className="card">
-                  <div className="card-header-row">
-                    <p className="card-eyebrow">Accounts</p>
-                  </div>
-                  <p className="accounts-updated">Static · <span className="accounts-sync">Sync</span></p>
-                  <div className="accounts-list">
-                    {ACCOUNTS.map((acc, i) => (
-                      <div className="account-row" key={acc.label}>
-                        <div className="account-icon" style={{ background: acc.iconBg, color: acc.iconColor }}>
-                          <Icon name={accountIcons[i]} size={16} />
-                        </div>
-                        <div className="account-info">
-                          <span className="account-label">{acc.label}</span>
-                          <span className="account-sub">{acc.sub}</span>
-                        </div>
-                        <span className="account-amount" style={{ color: acc.amountColor }}>
-                          {acc.amount}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
 
@@ -287,7 +454,9 @@ const Dashboard = () => {
                 <div className="card">
                   <div className="card-header-row">
                     <p className="card-eyebrow">Recent Transactions</p>
-                    <button className="card-link-btn"><Icon name="arrow-right" size={16} /></button>
+                    <button className="card-link-btn" onClick={() => navigate('/transactions')}>
+                      <Icon name="arrow-right" size={16} />
+                    </button>
                   </div>
                   {recentTx.length === 0 ? (
                     <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginTop: '1rem' }}>No transactions yet.</p>
@@ -323,22 +492,14 @@ const Dashboard = () => {
                 </div>
 
                 {/* Card — Upcoming */}
-                <div className="card">
-                  <p className="card-eyebrow">Upcoming</p>
-                  <span className="upcoming-pill">Payday in 3 days</span>
-                  <p className="upcoming-desc">
-                    2 recurring charges due in the next 7 days totaling $24.98.
-                  </p>
-                  <div className="upcoming-items">
-                    <div className="upcoming-item">
-                      <span className="upcoming-item-label">Spotify</span>
-                      <span className="upcoming-item-date">Apr 1 · $9.99</span>
-                    </div>
-                    <div className="upcoming-item">
-                      <span className="upcoming-item-label">iCloud</span>
-                      <span className="upcoming-item-date">Apr 2 · $14.99</span>
-                    </div>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div className="card-header-row">
+                    <p className="card-eyebrow">Upcoming</p>
+                    <button className="card-link-btn" onClick={() => navigate('/recurring')}>
+                      <Icon name="arrow-right" size={16} />
+                    </button>
                   </div>
+                  <DashCalendar items={recurring} />
                 </div>
               </div>
             </>
