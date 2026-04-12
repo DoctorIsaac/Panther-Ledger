@@ -37,3 +37,17 @@ All sensitive financial data must be protected.
 The system should aim for 99.9% uptime.
 Link to Backlog (https://trello.com/invite/b/697106e88219606e35ee0b0c/ATTI88382066c309b7a3a89cb1934d3b9c65A046E1EB/finance-tracker)
 
+
+
+
+3. System Overview & Architecture
+SYstem
+The Finance Tracker is a full-stack web application designed as a centralized platform for personal finance management. 
+It replaces fragmented manual tracking with an automated, secure environment where users can consolidate data from multiple financial sources.
+https://www.figma.com/design/VM8qZujrPQIeX90xYndbqV/Untitled?node-id=2-73&t=va5lLH3ELvVsEORO-1
+https://www.figma.com/design/c6mblGyQBHYfQOC2fmpCqr/Finance-tracker?node-id=0-1&t=H0M8idBJFM1DWAm5-1
+
+Architecture
+Presentation Layer(Front-End): Built with Vite+React.
+Application Layer(Back-end): Built with Python.
+Data Layer (Database): Built with MongoDB
