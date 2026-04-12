@@ -51,3 +51,10 @@ Architecture
 Presentation Layer(Front-End): Built with Vite+React.
 Application Layer(Back-end): Built with Python.
 Data Layer (Database): Built with MongoDB
+
+
+
+
+4. Deployment & Operations
+
+To Do****************
