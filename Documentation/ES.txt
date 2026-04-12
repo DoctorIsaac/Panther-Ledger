@@ -1,0 +1,19 @@
+Project Overview
+The Finance Tracker addresses the growing financial literacy gap among individuals, who often struggle with debt management and manual expense tracking. 
+This capstone project will developed a cross-platform application that automates budget categorization and provides data-driven savings insights.
+In an era of digital transactions and rising student debt, many young adults lack the tools to maintain a clear overview of their financial health. 
+The Finance Tracker was developed as a college capstone project to bridge the gap between complex institutional banking apps and manual, 
+error-prone spreadsheets. The project’s primary objective is to create an intuitive, automated platform that fosters long-term financial literacy,
+and proactive saving habits among Gen Z users(primarly).
+
+Technology
+The application was built using a robust stack (MongoDB, Python, React and Vite) to ensure high performance and cross-platform compatibility. 
+To solve the problem of manual entry fatigue, we integrated an API, allowing for secure, real-time synchronization with over 1000 financial institutions. 
+Data security is a top priority; the architecture utilizes encryption for sensitive user information and for secure authentication. 
+The development process followed an Agile lifecycle, involving three distinct sprints: core architecture, API integration, and UI/UX optimization based on user feedback.
+
+Results
+Testing was conducted with a focus group of 15 university students over a two-week period. The results were significant: 
+90% of participants reported a satisfaction on how the application categorized everything. 
+By successfully combining automated data aggregation with a minimalist design, this project demonstrates that technology can significantly lower the 
+psychological barriers to financial management. Future iterations will aim to include AI-driven predictive analytics to forecast monthly spending trends.
