@@ -1,3 +1,4 @@
+1. Executive Summary
 Project Overview
 The Finance Tracker addresses the growing financial literacy gap among individuals, who often struggle with debt management and manual expense tracking. 
 This capstone project will developed a cross-platform application that automates budget categorization and provides data-driven savings insights.
@@ -17,3 +18,22 @@ Testing was conducted with a focus group of 15 university students over a two-we
 90% of participants reported a satisfaction on how the application categorized everything. 
 By successfully combining automated data aggregation with a minimalist design, this project demonstrates that technology can significantly lower the 
 psychological barriers to financial management. Future iterations will aim to include AI-driven predictive analytics to forecast monthly spending trends.
+
+
+
+
+2. Problem & Requirements
+Problem
+The primary challenge facing by individuals is the financial literacy gap paired with "tracking fatigue". 
+Traditional methods like manual spreadsheets are time-consuming and prone to human error, 
+while many professional finance apps are overly complex or behind paywalls
+    Manually entering every receipt is tedious, causing users to abandon tracking within weeks.
+    Small, frequent digital transactions (subscriptions, coffee, late-night food) often go untracked, leading to "budget leakage".
+
+Requirements
+Users must be able to add, edit, delete, and categorize expenses.
+A dedicated section for setting and monitoring progress toward specific savings goals.
+All sensitive financial data must be protected.
+The system should aim for 99.9% uptime.
+Link to Backlog (https://trello.com/invite/b/697106e88219606e35ee0b0c/ATTI88382066c309b7a3a89cb1934d3b9c65A046E1EB/finance-tracker)
+
