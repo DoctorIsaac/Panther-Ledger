@@ -5,14 +5,15 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-container">
-        <div className="logo">
-          <span className="logo-text">Panther Ledger</span>
+        <div className="header-left">
+          <Link to="/" className="logo-text">Panther Ledger</Link>
+          <Link to="/features" className="nav-link">Features</Link>
+          <Link to="/team" className="nav-link">Meet the Team</Link>
         </div>
-        <nav className="nav">
-          <ul>
-            <li><Link to="/login" className="login-link">Log In</Link></li>
-          </ul>
-        </nav>
+        <div className="header-right">
+          <Link to="/login" className="nav-link">Log In</Link>
+          <Link to="/signup" className="signup-btn">Sign Up</Link>
+        </div>
       </div>
     </header>
   )

@@ -3,6 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from bson import ObjectId, Decimal128
 from app.db.db_connection import get_database
 from app.db.counters import next_counter
+from app.utils.encryption import encrypt_field, decrypt_field
 from typing import Literal
 
 db = get_database()
@@ -124,7 +125,7 @@ def update_expense_entry(user_id: str,
                                 "category_ref": category_obj_id,
                                 "amount": Decimal128(amount_clean),
                                 "expense_type": expense_type,
-                                "description": description.strip(),
+                                "description": encrypt_field(description.strip()),
                                 "purchase_date": purchase_date,
                                 "updated_at": datetime.now(timezone.utc)}}
                                 )
@@ -209,5 +210,52 @@ def display_expense_entries_by_category(user_id: str):
     results = expenses.aggregate(pipeline)
 
     return list(results)
+
+def display_recurring_entries(user_id: str):
+    user_obj_id = ObjectId(user_id)
+
+    pipeline = [
+        {
+            "$match": {
+                "user_id": user_obj_id,
+                "is_active": True,
+                "is_recurring": True
+            }
+        },
+        {
+            "$lookup": {
+                "from": "category",
+                "localField": "category_ref",
+                "foreignField": "_id",
+                "as": "category"
+            }
+        },
+        {
+            "$unwind": "$category"
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "expense_id": 1,
+                "name": 1,
+                "amount": 1,
+                "expense_type": 1,
+                "purchase_date": 1,
+                "description": 1,
+                "is_recurring": 1,
+                "frequency": 1,
+                "category_name": "$category.name"
+            }
+        },
+        {
+            "$sort": {"purchase_date": 1}
+        }
+    ]
+
+    results = list(expenses.aggregate(pipeline))
+    for r in results:
+        if r.get("description"):
+            r["description"] = decrypt_field(r["description"])
+    return results
 
 #Assign Entry to Doc

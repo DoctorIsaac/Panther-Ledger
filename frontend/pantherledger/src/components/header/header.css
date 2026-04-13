@@ -1,6 +1,5 @@
 .header {
   background-color: #081E3F;
-  border-bottom: 2px solid #1a6fd4;
   padding: 0.75rem 0;
   position: sticky;
   top: 0;
@@ -16,22 +15,27 @@
   padding: 0 2rem;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
 .logo-text {
   font-size: 1.1rem;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.01em;
+  text-decoration: none;
 }
 
-.nav ul {
-  list-style: none;
-  display: flex;
-  gap: 2rem;
-  margin: 0;
-  padding: 0;
-}
-
-.nav a {
+.nav-link {
   font-weight: 600;
   color: #ffffff;
   text-decoration: none;
@@ -39,6 +43,21 @@
   transition: opacity 0.2s;
 }
 
-.nav a:hover {
+.nav-link:hover {
   opacity: 0.75;
+}
+
+.signup-btn {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #081E3F;
+  background-color: #ffffff;
+  text-decoration: none;
+  padding: 0.45rem 1.1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.signup-btn:hover {
+  background-color: #e2e8f0;
 }

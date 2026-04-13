@@ -179,7 +179,7 @@
 /* ── Card grids ── */
 .cards-top {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1rem;
 }
@@ -357,70 +357,6 @@
   height: 100%;
   border-radius: 3px;
   transition: width 0.4s ease;
-}
-
-/* ════════════════════════════════════════
-   ACCOUNTS CARD
-════════════════════════════════════════ */
-.accounts-updated {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-bottom: 0.9rem;
-}
-
-.accounts-sync {
-  color: #B5934C;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.accounts-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.account-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.account-row:last-child {
-  border-bottom: none;
-}
-
-.account-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.account-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.account-label {
-  font-size: 0.87rem;
-  font-weight: 700;
-  color: #081E3F;
-}
-
-.account-sub {
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.account-amount {
-  font-size: 0.9rem;
-  font-weight: 700;
 }
 
 /* ════════════════════════════════════════

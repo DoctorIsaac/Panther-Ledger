@@ -7,6 +7,10 @@ import Terms from './pages/terms'
 import Dashboard from './pages/dashboard'
 import Onboarding from './pages/onboarding'
 import Recurring from './pages/recurring'
+import Upload from './pages/upload'
+import Transactions from './pages/transactions'
+import FeaturesPage from './pages/features'
+import TeamPage from './pages/team'
 import './App.css'
 
 function App() {
@@ -21,9 +25,13 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/recurring" element={<Recurring />} />
+        <Route path="/upload" element={<Upload />} />
+        <Route path="/transactions" element={<Transactions />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/team" element={<TeamPage />} />
       </Routes>
     </Router>
   )
-
 }
+
 export default App
