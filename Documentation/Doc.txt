@@ -1,0 +1,60 @@
+1. Executive Summary
+Project Overview
+The Finance Tracker addresses the growing financial literacy gap among individuals, who often struggle with debt management and manual expense tracking. 
+This capstone project will developed a cross-platform application that automates budget categorization and provides data-driven savings insights.
+In an era of digital transactions and rising student debt, many young adults lack the tools to maintain a clear overview of their financial health. 
+The Finance Tracker was developed as a college capstone project to bridge the gap between complex institutional banking apps and manual, 
+error-prone spreadsheets. The project’s primary objective is to create an intuitive, automated platform that fosters long-term financial literacy,
+and proactive saving habits among Gen Z users(primarly).
+
+Technology
+The application was built using a robust stack (MongoDB, Python, React and Vite) to ensure high performance and cross-platform compatibility. 
+To solve the problem of manual entry fatigue, we integrated an API, allowing for secure, real-time synchronization with over 1000 financial institutions. 
+Data security is a top priority; the architecture utilizes encryption for sensitive user information and for secure authentication. 
+The development process followed an Agile lifecycle, involving three distinct sprints: core architecture, API integration, and UI/UX optimization based on user feedback.
+
+Results
+Testing was conducted with a focus group of 15 university students over a two-week period. The results were significant: 
+90% of participants reported a satisfaction on how the application categorized everything. 
+By successfully combining automated data aggregation with a minimalist design, this project demonstrates that technology can significantly lower the 
+psychological barriers to financial management. Future iterations will aim to include AI-driven predictive analytics to forecast monthly spending trends.
+
+
+
+
+2. Problem & Requirements
+Problem
+The primary challenge facing by individuals is the financial literacy gap paired with "tracking fatigue". 
+Traditional methods like manual spreadsheets are time-consuming and prone to human error, 
+while many professional finance apps are overly complex or behind paywalls
+    Manually entering every receipt is tedious, causing users to abandon tracking within weeks.
+    Small, frequent digital transactions (subscriptions, coffee, late-night food) often go untracked, leading to "budget leakage".
+
+Requirements
+Users must be able to add, edit, delete, and categorize expenses.
+A dedicated section for setting and monitoring progress toward specific savings goals.
+All sensitive financial data must be protected.
+The system should aim for 99.9% uptime.
+Link to Backlog (https://trello.com/invite/b/697106e88219606e35ee0b0c/ATTI88382066c309b7a3a89cb1934d3b9c65A046E1EB/finance-tracker)
+
+
+
+
+3. System Overview & Architecture
+SYstem
+The Finance Tracker is a full-stack web application designed as a centralized platform for personal finance management. 
+It replaces fragmented manual tracking with an automated, secure environment where users can consolidate data from multiple financial sources.
+https://www.figma.com/design/VM8qZujrPQIeX90xYndbqV/Untitled?node-id=2-73&t=va5lLH3ELvVsEORO-1
+https://www.figma.com/design/c6mblGyQBHYfQOC2fmpCqr/Finance-tracker?node-id=0-1&t=H0M8idBJFM1DWAm5-1
+
+Architecture
+Presentation Layer(Front-End): Built with Vite+React.
+Application Layer(Back-end): Built with Python.
+Data Layer (Database): Built with MongoDB
+
+
+
+
+4. Deployment & Operations
+
+To Do****************

@@ -16,3 +16,5 @@ certifi
 pdfplumber
 cryptography
 anthropic
+fastapi
+uvicorn
