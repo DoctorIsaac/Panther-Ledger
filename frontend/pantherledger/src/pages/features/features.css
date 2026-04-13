@@ -1,0 +1,249 @@
+.fp-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.fp-eyebrow {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #B5934C;
+  margin-bottom: 0.6rem;
+}
+
+/* ────────────────────────────────────────
+   HERO
+──────────────────────────────────────── */
+.fp-hero {
+  background-color: #081E3F;
+  padding: 5rem 2rem 4.5rem;
+  text-align: center;
+}
+
+.fp-hero-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.fp-hero-heading {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.fp-hero-sub {
+  font-size: 1rem;
+  color: #a0aec0;
+  line-height: 1.65;
+  margin-bottom: 2rem;
+}
+
+.fp-hero-ctas {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.fp-cta-primary {
+  display: inline-block;
+  background-color: #B5934C;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: 50px;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.fp-cta-primary:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.fp-cta-secondary {
+  display: inline-block;
+  background-color: transparent;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: 50px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  text-decoration: none;
+  transition: border-color 0.2s, opacity 0.2s;
+}
+
+.fp-cta-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.7);
+  opacity: 0.85;
+}
+
+/* ────────────────────────────────────────
+   FEATURE LIST
+──────────────────────────────────────── */
+.fp-list {
+  padding: 5rem 2rem;
+}
+
+.fp-list-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5rem;
+}
+
+.fp-item {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.fp-item--reverse {
+  grid-template-columns: 1fr 160px;
+}
+
+.fp-item--reverse .fp-item-icon-col {
+  order: 2;
+}
+
+.fp-item--reverse .fp-item-text {
+  order: 1;
+}
+
+.fp-item-icon-col {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.25rem;
+}
+
+.fp-item-icon-wrap {
+  width: 72px;
+  height: 72px;
+  background-color: #081E3F;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #B5934C;
+  flex-shrink: 0;
+}
+
+.fp-item-icon-wrap svg {
+  width: 34px;
+  height: 34px;
+}
+
+.fp-item-tag {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #B5934C;
+  margin-bottom: 0.4rem;
+}
+
+.fp-item-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #081E3F;
+  margin-bottom: 0.75rem;
+  line-height: 1.25;
+}
+
+.fp-item-desc {
+  font-size: 0.95rem;
+  color: #4b5563;
+  line-height: 1.7;
+  margin-bottom: 1.25rem;
+}
+
+.fp-item-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fp-item-bullets li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.fp-bullet-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #B5934C;
+}
+
+.fp-list-inner > .fp-item + .fp-item {
+  padding-top: 5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* ────────────────────────────────────────
+   CTA BANNER
+──────────────────────────────────────── */
+.fp-cta-banner {
+  background-color: #f4f5f7;
+  padding: 5rem 2rem;
+}
+
+.fp-cta-banner-inner {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.fp-cta-heading {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #081E3F;
+  margin-bottom: 0.75rem;
+}
+
+.fp-cta-sub {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* ────────────────────────────────────────
+   RESPONSIVE
+──────────────────────────────────────── */
+@media (max-width: 640px) {
+  .fp-hero-heading {
+    font-size: 1.75rem;
+  }
+
+  .fp-item,
+  .fp-item--reverse {
+    grid-template-columns: 1fr;
+  }
+
+  .fp-item--reverse .fp-item-icon-col,
+  .fp-item--reverse .fp-item-text {
+    order: unset;
+  }
+
+  .fp-item-icon-col {
+    justify-content: flex-start;
+  }
+}

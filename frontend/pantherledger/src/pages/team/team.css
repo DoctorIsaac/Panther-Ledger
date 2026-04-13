@@ -1,0 +1,233 @@
+.team-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fb;
+}
+
+/* ────────────────────────────────────────
+   HERO
+──────────────────────────────────────── */
+.tm-hero {
+  position: relative;
+  padding: 10rem 2rem 10rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.tm-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+
+/* dark overlay so text stays readable */
+.tm-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 30, 63, 0.75);
+  z-index: 1;
+}
+
+.tm-hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.tm-eyebrow {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #B5934C;
+  margin-bottom: 0.75rem;
+}
+
+.tm-hero-heading {
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.tm-hero-sub {
+  font-size: 1rem;
+  color: #94a3b8;
+  line-height: 1.7;
+}
+
+/* ────────────────────────────────────────
+   GRID
+──────────────────────────────────────── */
+.tm-grid-section {
+  padding: 5rem 2rem 6rem;
+  flex: 1;
+}
+
+.tm-grid {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 1.75rem;
+}
+
+/* ────────────────────────────────────────
+   CARD
+──────────────────────────────────────── */
+.tm-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 2rem 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1px solid #e8eaed;
+  box-shadow: 0 1px 4px rgba(8, 30, 63, 0.05);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.tm-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(8, 30, 63, 0.12);
+}
+
+/* ── Portrait ── */
+.tm-portrait-wrap {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  margin-bottom: 1.4rem;
+}
+
+.tm-portrait-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  position: relative;
+  z-index: 1;
+  user-select: none;
+}
+
+.tm-portrait-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #081E3F 0%, #0f3460 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.tm-initials {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #B5934C;
+  letter-spacing: 0.04em;
+}
+
+/* animated gold ring on hover */
+.tm-portrait-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2.5px solid #B5934C;
+  opacity: 0;
+  transform: scale(0.88);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.tm-card:hover .tm-portrait-ring {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── Text ── */
+.tm-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.tm-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.3rem;
+}
+
+.tm-role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #B5934C;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin: 0 0 0.75rem;
+}
+
+.tm-bio {
+  font-size: 0.84rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 1.25rem;
+}
+
+/* ── Social links ── */
+.tm-socials {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.tm-social-link {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s, color 0.18s;
+}
+
+.tm-social-link:hover {
+  background-color: #081E3F;
+  color: #B5934C;
+}
+
+.tm-social-link svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ────────────────────────────────────────
+   RESPONSIVE
+──────────────────────────────────────── */
+@media (max-width: 520px) {
+  .tm-hero-heading {
+    font-size: 2rem;
+  }
+
+  .tm-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .tm-card {
+    padding: 1.5rem 1rem 1.25rem;
+  }
+}
