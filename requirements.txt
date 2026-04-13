@@ -18,3 +18,4 @@ cryptography
 anthropic
 fastapi
 uvicorn
+python-multipart
