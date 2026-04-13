@@ -1,5 +1,5 @@
 import { Header, Hero, Features, Footer } from '../../components'
-import './Home.css'
+import './home.css'
 
 const Home = () => {
   return (
