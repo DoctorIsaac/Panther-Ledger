@@ -17,7 +17,9 @@ def create_expense_entry(user_id: str,
                          description: str = "",
                          purchase_date: str = "",
                          document_ref: str ="",
-                         expense_type: Literal["deposit", "expense"] = "expense"):
+                         expense_type: Literal["deposit", "expense"] = "expense",
+                         is_recurring: bool = False,
+                         frequency: str = ""):
 
     user_obj_id = ObjectId(user_id)
     name_clean = name.strip().lower()
@@ -72,6 +74,8 @@ def create_expense_entry(user_id: str,
         "expense_type": expense_type,
         "description": description.strip(),
         "is_active": True,
+        "is_recurring": is_recurring,
+        "frequency": frequency,
         "purchase_date": purchase_date,
         "created_at": datetime.now(timezone.utc),
         "document_ref": document_obj_id

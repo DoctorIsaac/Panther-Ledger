@@ -94,7 +94,9 @@ def generate_expense_entry(user_id: str,
                          description: str = "",
                          purchase_date: str = "",
                          document_ref: str ="",
-                         expense_type:Literal["deposit", "expense"] = "expense"):
+                         expense_type:Literal["deposit", "expense"] = "expense",
+                         is_recurring: bool = False,
+                         frequency: str = ""):
 
     if document_ref:
         if not ObjectId.is_valid(document_ref):
@@ -108,7 +110,9 @@ def generate_expense_entry(user_id: str,
                                    description,
                                    date_clean,
                                    document_ref,
-                                   expense_type)
+                                   expense_type,
+                                   is_recurring,
+                                   frequency)
 
     return {
         "user_id": user_id,

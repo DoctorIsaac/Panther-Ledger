@@ -122,7 +122,7 @@ const AddModal = ({ categories, onClose, onSave }) => {
               <select className="modal-input" value={form.category_ref} onChange={e => set('category_ref', e.target.value)}>
                 <option value="">Select…</option>
                 {categories.map(c => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
+                  <option key={c.category_id} value={c.category_id}>{c.name}</option>
                 ))}
               </select>
             </div>
@@ -208,7 +208,7 @@ const Transactions = () => {
     ])
       .then(([exp, cats]) => {
         setExpenses(Array.isArray(exp) ? exp : [])
-        setCategories(Array.isArray(cats) ? cats : [])
+        setCategories(Array.isArray(cats?.categories) ? cats.categories : [])
       })
       .catch(() => {})
       .finally(() => setLoading(false))

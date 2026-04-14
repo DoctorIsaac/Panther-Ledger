@@ -27,6 +27,17 @@
   gap: 1.5rem;
 }
 
+.logo-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-img {
+  height: 2rem;
+  width: auto;
+}
+
 .logo-text {
   font-size: 1.1rem;
   font-weight: 700;
@@ -50,8 +61,8 @@
 .signup-btn {
   font-weight: 600;
   font-size: 0.9rem;
-  color: #081E3F;
-  background-color: #ffffff;
+  color: #ffffff;
+  background-color: #B5934C;
   text-decoration: none;
   padding: 0.45rem 1.1rem;
   border-radius: 6px;
@@ -59,5 +70,5 @@
 }
 
 .signup-btn:hover {
-  background-color: #e2e8f0;
+  background-color: #9e7e3f;
 }

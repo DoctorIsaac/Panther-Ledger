@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import img from '../../assets/panther-logo.png'
 import './header.css'
 
 const Header = () => {
@@ -6,7 +7,10 @@ const Header = () => {
     <header className="header">
       <div className="header-container">
         <div className="header-left">
-          <Link to="/" className="logo-text">Panther Ledger</Link>
+          <div className="logo-group">
+            <img src={img} alt="Panther Ledger Logo" className="logo-img" />
+            <Link to="/" className="logo-text">Panther Ledger</Link>
+          </div>
           <Link to="/features" className="nav-link">Features</Link>
           <Link to="/team" className="nav-link">Meet the Team</Link>
         </div>
