@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { api, getSession, clearSession } from '../../api'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { api, getSession } from '../../api'
+import { AppLayout, Icon } from '../../components'
 import './dashboard.css'
 
 /* ── Spend chart helpers ── */
@@ -22,46 +23,96 @@ function buildDailyChart(expenses, year, month) {
   return { cumDaily, daysInMonth, total: cum }
 }
 
-function makeChartPaths(cumDaily, daysInMonth, maxVal, upToDay) {
-  const xMin = 5, xMax = 248, yBottom = 84, yTop = 22
-  const safe = maxVal || 1
-  const limit = Math.min(upToDay ?? daysInMonth, daysInMonth)
-  const pts = []
-  for (let i = 0; i <= limit; i++) {
-    const x = +(xMin + (i / daysInMonth) * (xMax - xMin)).toFixed(1)
-    const y = +(yBottom - ((cumDaily[i] || 0) / safe) * (yBottom - yTop)).toFixed(1)
-    pts.push([x, y])
-  }
-  if (pts.length < 2) return { line: '', area: '', dot: null }
-  const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]},${p[1]}`).join(' ')
-  const last = pts[pts.length - 1]
-  const area = `${line} L ${last[0]},${yBottom} L ${pts[0][0]},${yBottom} Z`
-  return { line, area, dot: last }
-}
+/* ── Interactive spend chart ── */
+const DASH_X_MIN = 5, DASH_X_MAX = 248, DASH_Y_TOP = 16, DASH_Y_BOTTOM = 68
+const DASH_VB_W = 253, DASH_VB_H = 76
 
-/* ── Icons ── */
-const Icon = ({ name, size = 18 }) => {
-  const s = { width: size, height: size }
-  const base = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
-  switch (name) {
-    case 'grid':        return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    case 'dollar':      return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    case 'users':       return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    case 'card':        return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-    case 'activity':    return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    case 'bell':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    case 'search':      return <svg style={s} viewBox="0 0 24 24" {...base}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    case 'send':        return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-    case 'box':         return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-    case 'heart':       return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-    case 'bag':         return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-    case 'trending':    return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-    case 'arrow-right': return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    case 'chat':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    case 'logout':      return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    case 'upload':      return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    default:            return null
+function SpendChart({ thisChart, lastChart, chartMax }) {
+  const svgRef = useRef(null)
+  const [hover, setHover] = useState(null)
+
+  const days = thisChart.daysInMonth
+
+  function dayToX(day, totalDays) {
+    return DASH_X_MIN + (day / totalDays) * (DASH_X_MAX - DASH_X_MIN)
   }
+  function valToY(val) {
+    const safe = chartMax || 1
+    return DASH_Y_BOTTOM - (val / safe) * (DASH_Y_BOTTOM - DASH_Y_TOP)
+  }
+  function buildPath(cumData, totalDays, upTo) {
+    const limit = upTo !== undefined ? Math.min(upTo, totalDays) : totalDays
+    const pts = []
+    for (let i = 0; i <= limit; i++) {
+      pts.push([+dayToX(i, totalDays).toFixed(1), +valToY(cumData[i] || 0).toFixed(1)])
+    }
+    if (pts.length < 2) return { line: '', area: '', dot: null }
+    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]},${p[1]}`).join(' ')
+    const last = pts[pts.length - 1]
+    const area = `${line} L ${last[0]},${DASH_Y_BOTTOM} L ${pts[0][0]},${DASH_Y_BOTTOM} Z`
+    return { line, area, dot: last }
+  }
+
+  const today = new Date().getDate()
+  const thisPts = buildPath(thisChart.cumDaily, days, today)
+  const lastPts = buildPath(lastChart.cumDaily, lastChart.daysInMonth)
+
+  function handleMouseMove(e) {
+    if (!svgRef.current) return
+    const rect = svgRef.current.getBoundingClientRect()
+    const svgX = (e.clientX - rect.left) / rect.width * DASH_VB_W
+    const day = Math.round(((svgX - DASH_X_MIN) / (DASH_X_MAX - DASH_X_MIN)) * days)
+    setHover(Math.max(0, Math.min(day, Math.min(today, days))))
+  }
+
+  const hoverThisVal = hover !== null ? (thisChart.cumDaily[hover] || 0) : null
+  const hoverLastVal = hover !== null ? (lastChart.cumDaily[Math.min(hover, lastChart.daysInMonth)] || 0) : null
+  const hoverX       = hover !== null ? dayToX(hover, days) : null
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <svg
+        ref={svgRef}
+        className="spend-chart"
+        viewBox={`0 0 ${DASH_VB_W} ${DASH_VB_H}`}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHover(null)}
+        style={{ cursor: 'crosshair' }}
+      >
+        <defs>
+          <linearGradient id="dashAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#081E3F" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#081E3F" stopOpacity="0.01" />
+          </linearGradient>
+        </defs>
+        {lastPts.line && <path d={lastPts.line} fill="none" stroke="#B5934C" strokeWidth="1.5" strokeDasharray="5 3" />}
+        {thisPts.line && <path d={thisPts.area} fill="url(#dashAreaGrad)" />}
+        {thisPts.line && <path d={thisPts.line} fill="none" stroke="#081E3F" strokeWidth="2" />}
+        {thisPts.dot && <circle cx={thisPts.dot[0]} cy={thisPts.dot[1]} r="3.5" fill="#081E3F" stroke="#fff" strokeWidth="1.5" />}
+        {hover !== null && (
+          <>
+            <line x1={hoverX} x2={hoverX} y1={DASH_Y_TOP} y2={DASH_Y_BOTTOM} stroke="#081E3F" strokeWidth="1" strokeDasharray="3 2" opacity="0.4" />
+            <circle cx={hoverX} cy={valToY(hoverThisVal)} r="4" fill="#081E3F" stroke="#fff" strokeWidth="2" />
+            <circle cx={hoverX} cy={valToY(hoverLastVal)} r="3.5" fill="#B5934C" stroke="#fff" strokeWidth="1.5" />
+          </>
+        )}
+        <rect x={DASH_X_MIN} y={DASH_Y_TOP} width={DASH_X_MAX - DASH_X_MIN} height={DASH_Y_BOTTOM - DASH_Y_TOP} fill="transparent" />
+      </svg>
+      {hover !== null && (
+        <div className="dash-chart-tooltip">
+          <p className="dash-tooltip-day">Day {hover}</p>
+          <div className="dash-tooltip-row">
+            <span className="dash-tooltip-dot" style={{ background: '#081E3F' }} />
+            <span>This month: <strong>${hoverThisVal.toFixed(2)}</strong></span>
+          </div>
+          <div className="dash-tooltip-row">
+            <span className="dash-tooltip-dot" style={{ background: '#B5934C' }} />
+            <span>Last month: <strong>${hoverLastVal.toFixed(2)}</strong></span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 /* ── Greeting ── */
@@ -94,13 +145,13 @@ function buildPieData(expenses) {
 
 /* ── Donut pie chart ── */
 function PieChart({ slices, total }) {
-  const cx = 70, cy = 70, outerR = 58, innerR = 34
+  const cx = 100, cy = 100, outerR = 84, innerR = 50
   let angle = -Math.PI / 2
   const [hovered, setHovered] = useState(null)
 
   if (slices.length === 0) {
     return (
-      <svg viewBox="0 0 140 140" style={{ width: 140, height: 140 }}>
+      <svg viewBox="0 0 200 200" style={{ width: 200, height: 200 }}>
         <circle cx={cx} cy={cy} r={outerR} fill="#f3f4f6" />
         <circle cx={cx} cy={cy} r={innerR} fill="#fff" />
         <text x={cx} y={cy + 5} textAnchor="middle" fontSize="11" fill="#9ca3af">No data</text>
@@ -134,25 +185,25 @@ function PieChart({ slices, total }) {
   const activeSlice = hovered !== null ? slices[hovered] : null
 
   return (
-    <svg viewBox="0 0 140 140" style={{ width: 140, height: 140, overflow: 'visible' }}>
+    <svg viewBox="0 0 200 200" style={{ width: 200, height: 200, overflow: 'visible' }}>
       {paths}
       <circle cx={cx} cy={cy} r={innerR} fill="#fff" />
       {activeSlice ? (
         <>
-          <text x={cx} y={cy - 6} textAnchor="middle" fontSize="9" fill="#6b7280" style={{ textTransform: 'uppercase' }}>
+          <text x={cx} y={cy - 10} textAnchor="middle" fontSize="10" fill="#6b7280" style={{ textTransform: 'uppercase' }}>
             {activeSlice.label.length > 10 ? activeSlice.label.slice(0, 10) + '…' : activeSlice.label}
           </text>
-          <text x={cx} y={cy + 8} textAnchor="middle" fontSize="12" fontWeight="600" fill="#111827">
+          <text x={cx} y={cy + 8} textAnchor="middle" fontSize="16" fontWeight="700" fill="#111827">
             ${activeSlice.amount}
           </text>
-          <text x={cx} y={cy + 20} textAnchor="middle" fontSize="9" fill="#9ca3af">
+          <text x={cx} y={cy + 22} textAnchor="middle" fontSize="11" fill="#9ca3af">
             {Math.round(activeSlice.pct * 100)}%
           </text>
         </>
       ) : (
         <>
-          <text x={cx} y={cy - 4} textAnchor="middle" fontSize="9" fill="#6b7280">TOTAL</text>
-          <text x={cx} y={cy + 10} textAnchor="middle" fontSize="13" fontWeight="600" fill="#111827">
+          <text x={cx} y={cy - 6} textAnchor="middle" fontSize="10" fill="#9ca3af">TOTAL</text>
+          <text x={cx} y={cy + 12} textAnchor="middle" fontSize="17" fontWeight="700" fill="#111827">
             ${total}
           </text>
         </>
@@ -266,7 +317,6 @@ function DashCalendar({ items }) {
 const Dashboard = () => {
   const navigate = useNavigate()
   const session = getSession()
-  const [activeNav, setActiveNav] = useState('dashboard')
   const [expenses, setExpenses] = useState([])
   const [analytics, setAnalytics] = useState(null)
   const [recurring, setRecurring] = useState([])
@@ -298,11 +348,6 @@ const Dashboard = () => {
       .finally(() => setLoadingData(false))
   }, [])
 
-  const handleLogout = () => {
-    clearSession()
-    navigate('/login')
-  }
-
   const pieData = buildPieData(expenses)
   const pieTotal = pieData.reduce((s, c) => s + c.amount, 0)
 
@@ -311,13 +356,9 @@ const Dashboard = () => {
   const thisMonth = now.getMonth()
   const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1
   const lastYear  = thisMonth === 0 ? thisYear - 1 : thisYear
-  const today     = now.getDate()
-
   const thisChart  = buildDailyChart(expenses, thisYear, thisMonth)
   const lastChart  = buildDailyChart(expenses, lastYear, lastMonth)
   const chartMax   = Math.max(thisChart.total, lastChart.total, 1)
-  const thisPaths  = makeChartPaths(thisChart.cumDaily, thisChart.daysInMonth, chartMax, today)
-  const lastPaths  = makeChartPaths(lastChart.cumDaily, lastChart.daysInMonth, chartMax)
 
   const recentTx = [...expenses]
     .sort((a, b) => (b.purchase_date || '').localeCompare(a.purchase_date || ''))
@@ -326,71 +367,13 @@ const Dashboard = () => {
   const totalSpend = analytics ? `$${analytics.total_expenses.toLocaleString()}` : '—'
   const firstName = session?.first_name || session?.username || 'there'
 
-
-  const mainNav = [
-    { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',   path: null          },
-    { id: 'transactions', label: 'Transactions', icon: 'dollar', path: '/transactions' },
-    { id: 'recurring',    label: 'Recurring',    icon: 'users',  path: '/recurring'  },
-    { id: 'upload',       label: 'Upload',       icon: 'upload', path: '/upload'     },
-  ]
-  const financeNav = [
-    { id: 'accounts', label: 'Accounts', icon: 'card'     },
-    { id: 'spending', label: 'Spending', icon: 'activity', path: '/spending' },
-  ]
-
   return (
-    <div className="dash-wrap">
+    <AppLayout activeNav="dashboard">
+      <h1 className="dash-greeting">
+        {getGreeting()}, <span className="dash-name">{firstName}</span> 👋
+      </h1>
 
-      {/* ── Top navbar ── */}
-      <header className="dash-nav">
-        <Link to="/" className="dash-brand">Panther Ledger</Link>
-        <div className="dash-nav-right">
-          <button className="dash-icon-btn"><Icon name="bell" /></button>
-          <button className="dash-icon-btn"><Icon name="search" /></button>
-          <button className="dash-icon-btn" onClick={handleLogout} title="Log out"><Icon name="logout" /></button>
-          <div className="dash-avatar">
-            {firstName.slice(0, 2).toUpperCase()}
-          </div>
-        </div>
-      </header>
-
-      <div className="dash-body">
-
-        {/* ── Sidebar ── */}
-        <aside className="dash-sidebar">
-          <p className="sidebar-section-label">Main</p>
-          {mainNav.map(item => (
-            <button
-              key={item.id}
-              className={`sidebar-item ${activeNav === item.id ? 'active' : ''}`}
-              onClick={() => item.path ? navigate(item.path) : setActiveNav(item.id)}
-            >
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-
-          <p className="sidebar-section-label" style={{ marginTop: '1.5rem' }}>Finance</p>
-          {financeNav.map(item => (
-            <button
-              key={item.id}
-              className={`sidebar-item ${activeNav === item.id ? 'active' : ''}`}
-              onClick={() => item.path ? navigate(item.path) : setActiveNav(item.id)}
-            >
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-
-        </aside>
-
-        {/* ── Main content ── */}
-        <main className="dash-main">
-          <h1 className="dash-greeting">
-            {getGreeting()}, <span className="dash-name">{firstName}</span> 👋
-          </h1>
-
-          {loadingData ? (
+      {loadingData ? (
             <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading your data…</p>
           ) : (
             <>
@@ -401,7 +384,9 @@ const Dashboard = () => {
                 <div className="card">
                   <div className="card-header-row">
                     <p className="card-eyebrow">Current Spend — This Month</p>
-                    <span className="card-info">ⓘ</span>
+                    <button className="card-link-btn" onClick={() => navigate('/spending')}>
+                      <Icon name="arrow-right" size={16} />
+                    </button>
                   </div>
                   <p className="spend-amount">{totalSpend}</p>
                   {analytics && (
@@ -410,20 +395,7 @@ const Dashboard = () => {
                     </p>
                   )}
 
-                  <svg className="spend-chart" viewBox="0 0 253 90" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#081E3F" stopOpacity="0.15" />
-                        <stop offset="100%" stopColor="#081E3F" stopOpacity="0.01" />
-                      </linearGradient>
-                    </defs>
-                    <path d={thisPaths.area} fill="url(#areaGrad)" />
-                    <path d={lastPaths.line} fill="none" stroke="#B5934C" strokeWidth="2" strokeDasharray="5 3" />
-                    <path d={thisPaths.line} fill="none" stroke="#081E3F" strokeWidth="2.5" />
-                    {thisPaths.dot && (
-                      <circle cx={thisPaths.dot[0]} cy={thisPaths.dot[1]} r="4" fill="#081E3F" stroke="#fff" strokeWidth="2" />
-                    )}
-                  </svg>
+                  <SpendChart thisChart={thisChart} lastChart={lastChart} chartMax={chartMax} />
 
                   <div className="chart-x-labels">
                     <span>1st</span><span>8th</span><span>16th</span><span>24th</span>
@@ -435,13 +407,28 @@ const Dashboard = () => {
                 </div>
 
                 {/* Card 2 — Category Pie */}
-                <div className="card">
-                  <p className="card-eyebrow">Spending by Category</p>
+                <div className="card dash-pie-card">
+                  <div className="card-header-row">
+                    <p className="card-eyebrow">Spending by Category</p>
+                     <button className="card-link-btn" onClick={() => navigate('/spending')}>
+                      <Icon name="arrow-right" size={16} />
+                    </button>
+                  </div>
                   {pieData.length === 0 ? (
                     <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginTop: '1rem' }}>No expenses this month.</p>
                   ) : (
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.75rem' }}>
+                    <div className="dash-pie-body">
                       <PieChart slices={pieData} total={pieTotal} />
+                      <div className="dash-pie-legend">
+                        {pieData.map((s, i) => (
+                          <div key={i} className="dash-pie-legend-row">
+                            <span className="dash-pie-legend-dot" style={{ background: s.color }} />
+                            <span className="dash-pie-legend-label">{s.label}</span>
+                            <span className="dash-pie-legend-pct">{Math.round(s.pct * 100)}%</span>
+                            <span className="dash-pie-legend-amt">${s.amount}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -506,15 +493,7 @@ const Dashboard = () => {
           )}
 
           <p className="dash-footer-text">Florida International University</p>
-        </main>
-      </div>
-
-      {/* Floating chat button */}
-      <button className="chat-fab">
-        <Icon name="chat" size={20} />
-        <span className="chat-dot" />
-      </button>
-    </div>
+    </AppLayout>
   )
 }
 

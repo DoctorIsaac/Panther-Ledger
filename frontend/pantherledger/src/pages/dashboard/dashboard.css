@@ -252,8 +252,47 @@
 
 .spend-chart {
   width: 100%;
-  height: 90px;
+  height: auto;
   display: block;
+  overflow: visible;
+}
+
+.dash-chart-tooltip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.4rem 0.65rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  pointer-events: none;
+  min-width: 145px;
+  z-index: 10;
+  font-size: 0.8rem;
+}
+
+.dash-tooltip-day {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.dash-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.1rem 0;
+}
+
+.dash-tooltip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .chart-x-labels {
@@ -294,6 +333,88 @@
   background: repeating-linear-gradient(
     90deg, #B5934C 0px, #B5934C 5px, transparent 5px, transparent 8px
   );
+}
+
+/* ════════════════════════════════════════
+   PIE CARD
+════════════════════════════════════════ */
+.dash-pie-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-pie-body {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 1;
+  margin-top: 0.25rem;
+}
+
+.dash-pie-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.dash-pie-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dash-pie-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dash-pie-legend-label {
+  flex: 1;
+  font-size: 0.8rem;
+  color: #374151;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-pie-legend-pct {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  min-width: 28px;
+  text-align: right;
+}
+
+.dash-pie-legend-amt {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #111827;
+  min-width: 44px;
+  text-align: right;
+}
+
+.dash-spending-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  background: #081E3F;
+  color: #B5934C;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.dash-spending-btn:hover {
+  opacity: 0.85;
 }
 
 /* ════════════════════════════════════════

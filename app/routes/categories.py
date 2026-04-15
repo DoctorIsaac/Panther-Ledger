@@ -8,6 +8,7 @@ from app.services.category_service import (
     update_category_info,
     delete_category_info,
 )
+from app.models.category import place_default_categories
 from app.routes.serializers import serialize
 from app.routes.dependencies import require_owner
 
@@ -27,6 +28,7 @@ class CategoryUpdate(BaseModel):
 @router.get("/{user_id}")
 def get_categories(user_id: str, _: str = Depends(require_owner)):
     try:
+        place_default_categories(user_id)
         result = display_categories(user_id)
         return serialize(result)
     except Exception as e:

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { api, getSession, clearSession } from '../../api'
-import '../dashboard/dashboard.css'
+import { useNavigate } from 'react-router-dom'
+import { api, getSession } from '../../api'
+import { AppLayout, Icon } from '../../components'
 import './recurring.css'
 
 /* ── Avatar color palette (cycles by index) ── */
@@ -98,27 +98,6 @@ const Calendar = ({ items }) => {
   )
 }
 
-/* ── Icons ── */
-const Icon = ({ name, size = 18 }) => {
-  const s = { width: size, height: size }
-  const base = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
-  switch (name) {
-    case 'grid':         return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    case 'dollar':       return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    case 'users':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    case 'card':         return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-    case 'activity':     return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    case 'bell':         return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    case 'search':       return <svg style={s} viewBox="0 0 24 24" {...base}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    case 'chat':         return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    case 'chevron-down': return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="6 9 12 15 18 9"/></svg>
-    case 'plus':         return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    case 'repeat':       return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-    case 'upload':       return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    default:             return null
-  }
-}
-
 /* ── Toggle switch ── */
 const Toggle = ({ checked, onChange }) => (
   <button className={`rc-toggle ${checked ? 'on' : ''}`} onClick={onChange} role="switch" aria-checked={checked} />
@@ -128,12 +107,6 @@ const Toggle = ({ checked, onChange }) => (
 const Recurring = () => {
   const navigate = useNavigate()
   const session = getSession()
-
-  const userInitials = session
-    ? (session.first_name?.[0] || session.username?.[0] || '?').toUpperCase()
-    : '?'
-
-  const logout = () => { clearSession(); navigate('/login') }
 
   const [items, setItems]         = useState([])
   const [loading, setLoading]     = useState(true)
@@ -206,58 +179,9 @@ const Recurring = () => {
     return map
   }, [CATEGORIES])
 
-  const mainNav = [
-    { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',   path: '/dashboard'  },
-    { id: 'transactions', label: 'Transactions', icon: 'dollar', path: '/transactions'},
-    { id: 'recurring',    label: 'Recurring',    icon: 'users',  path: '/recurring'  },
-    { id: 'upload',       label: 'Upload',       icon: 'upload', path: '/upload'     },
-  ]
-  const financeNav = [
-    { id: 'accounts', label: 'Accounts', icon: 'card',     path: '/accounts' },
-    { id: 'spending', label: 'Spending', icon: 'activity', path: '/spending'  },
-  ]
-
   return (
-    <div className="dash-wrap">
-
-      {/* Navbar */}
-      <header className="dash-nav">
-        <Link to="/" className="dash-brand">Panther Ledger</Link>
-        <div className="dash-nav-right">
-          <button className="dash-icon-btn"><Icon name="bell" /></button>
-          <button className="dash-icon-btn"><Icon name="search" /></button>
-          <div className="dash-avatar" title="Log out" onClick={logout} style={{ cursor: 'pointer' }}>
-            {userInitials}
-          </div>
-        </div>
-      </header>
-
-      <div className="dash-body">
-
-        {/* Sidebar */}
-        <aside className="dash-sidebar">
-          <p className="sidebar-section-label">Main</p>
-          {mainNav.map(item => (
-            <button
-              key={item.id}
-              className={`sidebar-item ${item.id === 'recurring' ? 'active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-          <p className="sidebar-section-label" style={{ marginTop: '1.5rem' }}>Finance</p>
-          {financeNav.map(item => (
-            <button key={item.id} className="sidebar-item" onClick={() => navigate(item.path)}>
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-        </aside>
-
-        {/* Main */}
-        <main className="dash-main" onClick={() => setOpenDrop(null)}>
+    <AppLayout activeNav="recurring">
+      <div onClick={() => setOpenDrop(null)}>
 
           <div className="rc-page-header">
             <h1 className="rc-title">Recurring</h1>
@@ -436,14 +360,8 @@ const Recurring = () => {
           )}
 
           <p className="dash-footer-text">Florida International University</p>
-        </main>
       </div>
-
-      <button className="chat-fab">
-        <Icon name="chat" size={20} />
-        <span className="chat-dot" />
-      </button>
-    </div>
+    </AppLayout>
   )
 }
 

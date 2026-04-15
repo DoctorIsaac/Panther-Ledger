@@ -1,32 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { api, getSession, clearSession } from '../../api'
-import '../dashboard/dashboard.css'
+import { useNavigate } from 'react-router-dom'
+import { api, getSession } from '../../api'
+import { AppLayout, Icon } from '../../components'
 import './transactions.css'
-
-/* ── Icons ── */
-const Icon = ({ name, size = 18 }) => {
-  const s = { width: size, height: size }
-  const base = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
-  switch (name) {
-    case 'grid':        return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    case 'dollar':      return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    case 'users':       return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    case 'card':        return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-    case 'activity':    return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    case 'bell':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    case 'search':      return <svg style={s} viewBox="0 0 24 24" {...base}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    case 'chat':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    case 'logout':      return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    case 'upload':      return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    case 'plus':        return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    case 'trash':       return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-    case 'chevron-down':return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="6 9 12 15 18 9"/></svg>
-    case 'x':           return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    case 'repeat':      return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-    default:            return null
-  }
-}
 
 const AVATAR_COLORS = [
   { bg: '#bfdbfe', color: '#1d4ed8' },
@@ -186,8 +162,6 @@ const AddModal = ({ categories, onClose, onSave }) => {
 const Transactions = () => {
   const navigate  = useNavigate()
   const session   = getSession()
-  const firstName = session?.first_name || session?.username || 'there'
-
   const [expenses,   setExpenses]   = useState([])
   const [categories, setCategories] = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -199,6 +173,10 @@ const Transactions = () => {
   const [typeFilter, setTypeFilter] = useState('')
   const [catFilter,  setCatFilter]  = useState('')
   const [sortKey,    setSortKey]    = useState('date_desc')
+
+  // pagination
+  const [pageSize, setPageSize] = useState(25)
+  const [page,     setPage]     = useState(1)
 
   useEffect(() => {
     if (!session) { navigate('/login'); return }
@@ -250,68 +228,24 @@ const Transactions = () => {
     return list
   }, [expenses, search, typeFilter, catFilter, sortKey])
 
+  // reset to page 1 when filters/page size change
+  useEffect(() => { setPage(1) }, [search, typeFilter, catFilter, sortKey, pageSize])
+
+  const totalPages  = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const paginated   = filtered.slice((page - 1) * pageSize, page * pageSize)
+
   const stats = useMemo(() => {
     const totalExpenses = expenses.filter(e => e.expense_type === 'expense').reduce((s, e) => s + (e.amount || 0), 0)
     const totalDeposits = expenses.filter(e => e.expense_type === 'deposit').reduce((s, e) => s + (e.amount || 0), 0)
     return { totalExpenses, totalDeposits, net: totalDeposits - totalExpenses, count: expenses.length }
   }, [expenses])
 
-  const mainNav = [
-    { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',   path: '/dashboard'    },
-    { id: 'transactions', label: 'Transactions', icon: 'dollar', path: '/transactions' },
-    { id: 'recurring',    label: 'Recurring',    icon: 'users',  path: '/recurring'    },
-    { id: 'upload',       label: 'Upload',       icon: 'upload', path: '/upload'       },
-  ]
-  const financeNav = [
-    { id: 'accounts', label: 'Accounts', icon: 'card'                },
-    { id: 'spending', label: 'Spending', icon: 'activity', path: '/spending' },
-  ]
-
   return (
-    <div className="dash-wrap" onClick={() => setOpenDrop(null)}>
+    <AppLayout activeNav="transactions">
+      <div onClick={() => setOpenDrop(null)}>
 
-      {/* Navbar */}
-      <header className="dash-nav">
-        <Link to="/" className="dash-brand">Panther Ledger</Link>
-        <div className="dash-nav-right">
-          <button className="dash-icon-btn"><Icon name="bell" /></button>
-          <button className="dash-icon-btn"><Icon name="search" /></button>
-          <button className="dash-icon-btn" onClick={() => { clearSession(); navigate('/login') }} title="Log out">
-            <Icon name="logout" />
-          </button>
-          <div className="dash-avatar">{firstName.slice(0, 2).toUpperCase()}</div>
-        </div>
-      </header>
-
-      <div className="dash-body">
-
-        {/* Sidebar */}
-        <aside className="dash-sidebar">
-          <p className="sidebar-section-label">Main</p>
-          {mainNav.map(item => (
-            <button
-              key={item.id}
-              className={`sidebar-item ${item.id === 'transactions' ? 'active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-          <p className="sidebar-section-label" style={{ marginTop: '1.5rem' }}>Finance</p>
-          {financeNav.map(item => (
-            <button key={item.id} className="sidebar-item" onClick={() => item.path && navigate(item.path)}>
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-        </aside>
-
-        {/* Main */}
-        <main className="dash-main">
-
-          {/* Page header */}
-          <div className="tx-page-header">
+        {/* Page header */}
+        <div className="tx-page-header">
             <div>
               <h1 className="rc-title">Transactions</h1>
               <p className="tx-page-sub">{stats.count} total transactions</p>
@@ -430,13 +364,36 @@ const Transactions = () => {
 
               {/* Transaction list */}
               <div className="card tx-list-card">
+                {filtered.length > 0 && (
+                  <div className="tx-pagination">
+                    <div className="tx-page-size">
+                      <span className="tx-page-size-label">Rows per page:</span>
+                      {[10, 25, 50].map(n => (
+                        <button
+                          key={n}
+                          className={`tx-page-size-btn ${pageSize === n ? 'active' : ''}`}
+                          onClick={() => setPageSize(n)}
+                        >{n}</button>
+                      ))}
+                    </div>
+                    <span className="tx-page-info">
+                      {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+                    </span>
+                    <div className="tx-page-nav">
+                      <button className="tx-page-btn" onClick={() => setPage(1)}          disabled={page === 1}>«</button>
+                      <button className="tx-page-btn" onClick={() => setPage(p => p - 1)} disabled={page === 1}>‹</button>
+                      <button className="tx-page-btn" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>›</button>
+                      <button className="tx-page-btn" onClick={() => setPage(totalPages)} disabled={page === totalPages}>»</button>
+                    </div>
+                  </div>
+                )}
                 {filtered.length === 0 ? (
                   <p className="tx-empty">
                     {expenses.length === 0 ? 'No transactions yet. Add one or upload a bank statement.' : 'No transactions match your filters.'}
                   </p>
                 ) : (
                   <div className="tx-full-list">
-                    {filtered.map((tx, idx) => {
+                    {paginated.map((tx, idx) => {
                       const isDeposit = tx.expense_type === 'deposit'
                       const palette   = AVATAR_COLORS[idx % AVATAR_COLORS.length]
                       const catStyle  = catColorMap[tx.category_name] || CAT_COLORS[0]
@@ -485,8 +442,6 @@ const Transactions = () => {
           )}
 
           <p className="dash-footer-text">Florida International University</p>
-        </main>
-      </div>
 
       {showModal && (
         <AddModal
@@ -496,11 +451,8 @@ const Transactions = () => {
         />
       )}
 
-      <button className="chat-fab">
-        <Icon name="chat" size={20} />
-        <span className="chat-dot" />
-      </button>
-    </div>
+      </div>
+    </AppLayout>
   )
 }
 

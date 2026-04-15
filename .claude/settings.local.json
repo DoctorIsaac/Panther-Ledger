@@ -3,7 +3,8 @@
     "allow": [
       "Bash(/tmp/tree.txt:*)",
       "Read(//tmp/**)",
-      "Bash(grep -n \"analytics\\\\|spending\" /Users/steven/Documents/GitHub/FinanceTracker/app/routes/*.py)"
+      "Bash(grep -n \"analytics\\\\|spending\" /Users/steven/Documents/GitHub/FinanceTracker/app/routes/*.py)",
+      "Bash(git checkout *)"
     ]
   }
 }

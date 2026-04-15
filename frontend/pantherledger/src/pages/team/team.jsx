@@ -2,7 +2,10 @@ import { Header, Footer } from '../../components'
 import './team.css'
 
 // ── Drop your portrait files into src/assets/ and import them here ──
-import stevenImg      from '../../assets/steven.jpg'
+import stevenImg      from '../../assets/team/steven.jpg'
+import jaedonImg      from '../../assets/team/jaedon.jpg'
+import carlvenskyImg  from '../../assets/team/carlvensky.jpg'
+import anthonyImg     from '../../assets/team/anthony.gif'
 import teamBg        from '../../assets/team-bg.mp4'
 
 // ── Shift the vidçeo vertically. 0% = top, 50% = center, 100% = bottom.
@@ -21,7 +24,7 @@ const TEAM_MEMBERS = [
     id: 'member-1',
     name: 'Steven Velasquez',
     role: 'Full Stack Developer',
-    bio: 'Passionate about building intuitive financial tools for students.',
+    bio: 'Hello, I am Steven Velasquez a second-year computer science and mathematics student at FIU. I currently have a deep interest in full stack development and data engineering.',
     photo: stevenImg,
     pos: { x: 50, y: 20 },
     github: 'https://github.com/DoctorIsaac',
@@ -40,32 +43,32 @@ const TEAM_MEMBERS = [
   {
     id: 'member-3',
     name: 'Jaedon Charles',
-    role: 'Role',
-    bio: 'Add a short bio here.',
-    // photo: jaedonImg,
+    role: 'Backend Developer',
+    bio: 'I\'m Jaedon Charles passionate about AI and machine learning, with experience building data-driven solutions and real-world applications.',
+    photo: jaedonImg,
     pos: { x: 50, y: 50 },
-    github: 'https://github.com',
-    linkedin: 'https://linkedin.com',
+    github: 'https://github.com/jaedoncharles',
+    linkedin: 'https://www.linkedin.com/in/jaedoncharles/',
   },
   {
     id: 'member-4',
     name: 'Carlvensky St. Fleur',
-    role: 'Role',
-    bio: 'Add a short bio here.',
-    // photo: carlvenskyImg,
+    role: 'Frontend Developer',
+    bio: 'Deep passion for design and understanding the world of computers.',
+    photo: carlvenskyImg,
     pos: { x: 50, y: 50 },
-    github: 'https://github.com',
-    linkedin: 'https://linkedin.com',
+    github: 'https://github.com/Carlvensky',
+    linkedin: 'https://www.linkedin.com/in/carlvensky7/',
   },
   {
     id: 'member-5',
     name: 'Anthony Casas',
     role: 'Role',
     bio: 'Add a short bio here.',
-    // photo: anthonyImg,
+    photo: anthonyImg,
     pos: { x: 50, y: 50 },
-    github: 'https://github.com',
-    linkedin: 'https://linkedin.com',
+    github: 'https://github.com/acasas00',
+    linkedin: 'https://www.linkedin.com/in/anthony-casas/',
   },
 ]
 

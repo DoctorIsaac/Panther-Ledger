@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { getSession } from '../../api'
+import pantherLogo from '../../assets/panther-logo.png'
 import './onboarding.css'
 
 /* ── Goal cards ── */
@@ -10,22 +12,11 @@ const GOALS = [
   { id: 'wealth',  icon: '📈', iconBg: '#d1fae5', iconColor: '#059669', title: 'Grow my wealth',    desc: 'Invest and build long-term financial health' },
 ]
 
-/* ── Banks ── */
-const BANKS = [
-  { id: 'wf',    initials: 'WF', name: 'Wells Fargo',    bg: '#d9363e', color: '#fff' },
-  { id: 'ch',    initials: 'CH', name: 'Chase',          bg: '#081E3F', color: '#fff' },
-  { id: 'ba',    initials: 'BA', name: 'Bank of America',bg: '#004a97', color: '#fff' },
-  { id: 'al',    initials: 'AL', name: 'Ally Bank',      bg: '#7c3aed', color: '#fff' },
-  { id: 'su',    initials: 'SU', name: 'SunTrust',       bg: '#1e3a2f', color: '#fff' },
-  { id: 'other', initials: '+',  name: 'Other bank',     bg: '#f3f4f6', color: '#6b7280' },
-]
-
-/* ── Left-panel content per step ── */
-const LEFT = [
-  { title: "Let's get you\nset up, Steven.", desc: 'Just a few steps to personalize your Panther Ledger experience.' },
-  { title: 'Tell us about\nyour finances.',  desc: 'This helps Penny give you smarter, more relevant advice.' },
-  { title: 'Connect your\naccounts.',        desc: 'Link your bank so Penny can auto-import transactions and track your balance live.' },
-  { title: 'Stay in the\nloop.',             desc: "Get nudged when it matters most — and not when it doesn't." },
+/* ── Left-panel content per step (name injected at runtime) ── */
+const getLeft = (firstName) => [
+  { title: `Let's get you\nset up, ${firstName}.`, desc: 'Just a few steps to personalize your Panther Ledger experience.' },
+  { title: 'Tell us about\nyour finances.',         desc: 'This helps Penny give you smarter, more relevant advice.' },
+  { title: 'Stay in the\nloop.',                    desc: "Get nudged when it matters most — and not when it doesn't." },
 ]
 
 /* ── Toggle ── */
@@ -35,6 +26,9 @@ const Toggle = ({ checked, onChange }) => (
 
 const Onboarding = () => {
   const navigate = useNavigate()
+  const session = getSession()
+  const firstName = session?.first_name || 'there'
+  const LEFT = getLeft(firstName)
   const [step, setStep] = useState(1)
 
   /* Step 1 */
@@ -49,10 +43,6 @@ const Onboarding = () => {
   const [savings, setSavings]       = useState(300)
 
   /* Step 3 */
-  const [bank, setBank] = useState('wf')
-  const selectedBank = BANKS.find(b => b.id === bank)
-
-  /* Step 4 */
   const [notifs, setNotifs] = useState({
     weekly:      true,
     overspend:   true,
@@ -65,7 +55,7 @@ const Onboarding = () => {
   const next = () => setStep(s => s + 1)
   const back = () => setStep(s => s - 1)
 
-  const isSuccess = step === 5
+  const isSuccess = step === 4
 
   return (
     <div className="ob-page">
@@ -74,21 +64,21 @@ const Onboarding = () => {
       <div className="ob-header">
         <Link to="/" className="ob-brand">Panther Ledger</Link>
         <span className="ob-step-label">
-          {isSuccess ? 'All done!' : `Step ${step} of 5`}
+          {isSuccess ? 'All done!' : `Step ${step} of 4`}
         </span>
       </div>
 
       {/* ── Body ── */}
       <div className={`ob-body ${isSuccess ? 'ob-body--success' : ''}`}>
 
-        {/* Left panel (hidden on step 5) */}
+        {/* Left panel (hidden on success) */}
         {!isSuccess && (
           <div className="ob-left">
-            <div className="ob-pl-badge">PL</div>
+            <img src={pantherLogo} alt="Panther Ledger" className="ob-pl-badge" />
             <h2 className="ob-left-title">{LEFT[step - 1].title}</h2>
             <p className="ob-left-desc">{LEFT[step - 1].desc}</p>
             <div className="ob-dots">
-              {[1,2,3,4,5].map(n => (
+              {[1,2,3,4].map(n => (
                 <span key={n} className={`ob-dot ${n === step ? 'active' : ''}`} />
               ))}
             </div>
@@ -182,39 +172,8 @@ const Onboarding = () => {
               </>
             )}
 
-            {/* ── Step 3: Bank ── */}
+            {/* ── Step 3: Notifications ── */}
             {step === 3 && (
-              <>
-                <h2 className="ob-card-title">Link your bank account</h2>
-                <p className="ob-card-sub">Choose your bank below. We use 256-bit encryption and read-only access — we never touch your funds.</p>
-                <div className="security-badge">
-                  <span className="security-dot">🔒</span>
-                  Secured by 256-bit SSL encryption · Read-only access · Never stores credentials
-                </div>
-                <div className="banks-grid">
-                  {BANKS.map(b => (
-                    <button
-                      key={b.id}
-                      className={`bank-card ${bank === b.id ? 'selected' : ''}`}
-                      onClick={() => setBank(b.id)}
-                    >
-                      <div className="bank-avatar" style={{ background: b.bg, color: b.color }}>{b.initials}</div>
-                      <span className="bank-name">{b.name}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="ob-actions">
-                  <button className="ob-btn-back" onClick={back}>← Back</button>
-                  <button className="ob-btn-primary" onClick={next}>
-                    Link {selectedBank?.name} →
-                  </button>
-                  <button className="ob-btn-skip" onClick={next}>Skip — I'll do this later</button>
-                </div>
-              </>
-            )}
-
-            {/* ── Step 4: Notifications ── */}
-            {step === 4 && (
               <>
                 <h2 className="ob-card-title">Notification preferences</h2>
                 <p className="ob-card-sub">You can change these anytime in Settings. We'll never spam you.</p>
@@ -242,18 +201,17 @@ const Onboarding = () => {
               </>
             )}
 
-            {/* ── Step 5: Success ── */}
-            {step === 5 && (
+            {/* ── Step 4: Success ── */}
+            {step === 4 && (
               <div className="ob-success">
                 <div className="ob-success-icon">✓</div>
-                <h2 className="ob-success-title">You're all set, Steven! 🎉</h2>
+                <h2 className="ob-success-title">You're all set, {firstName}! 🎉</h2>
                 <p className="ob-success-sub">
                   Your Panther Ledger account is ready. We've set up your dashboard based on your goals and preferences — Penny is standing by to help.
                 </p>
                 <div className="ob-pills">
                   {goals.includes('track') && <span className="ob-pill green">Tracking spending</span>}
                   {savings > 0            && <span className="ob-pill green">Saving ${savings}/mo</span>}
-                  {bank !== 'other'       && <span className="ob-pill green">{selectedBank?.name} linked</span>}
                   {notifs.bills           && <span className="ob-pill green">Bill reminders on</span>}
                 </div>
                 <div className="ob-pills">

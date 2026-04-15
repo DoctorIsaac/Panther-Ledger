@@ -1,31 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { api, getSession, clearSession } from '../../api'
-import '../dashboard/dashboard.css'
+import { useNavigate } from 'react-router-dom'
+import { api, getSession } from '../../api'
+import { AppLayout, Icon } from '../../components'
 import './upload.css'
-
-/* ── Icons ── */
-const Icon = ({ name, size = 18 }) => {
-  const s = { width: size, height: size }
-  const base = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
-  switch (name) {
-    case 'grid':        return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    case 'dollar':      return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    case 'users':       return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    case 'card':        return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-    case 'activity':    return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    case 'bell':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    case 'search':      return <svg style={s} viewBox="0 0 24 24" {...base}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    case 'chat':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    case 'logout':      return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    case 'upload':      return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    case 'file':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-    case 'trash':       return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-    case 'check':       return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="20 6 9 17 4 12"/></svg>
-    case 'arrow-right': return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    default:            return null
-  }
-}
 
 /* ── Format date ── */
 function fmtDate(dateStr) {
@@ -54,9 +31,6 @@ const Upload = () => {
   const [error, setError]           = useState('')
   const [documents, setDocuments]   = useState([])
   const [docsLoading, setDocsLoading] = useState(true)
-
-  const firstName = session?.first_name || session?.username || 'there'
-  const userInitials = firstName.slice(0, 2).toUpperCase()
 
   useEffect(() => {
     if (!session) { navigate('/login'); return }
@@ -118,60 +92,9 @@ const Upload = () => {
     }
   }
 
-  const mainNav = [
-    { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',   path: '/dashboard' },
-    { id: 'transactions', label: 'Transactions', icon: 'dollar', path: '/transactions' },
-    { id: 'recurring',    label: 'Recurring',    icon: 'users',  path: '/recurring' },
-    { id: 'upload',       label: 'Upload',       icon: 'upload', path: '/upload'    },
-  ]
-  const financeNav = [
-    { id: 'accounts', label: 'Accounts', icon: 'card'     },
-    { id: 'spending', label: 'Spending', icon: 'activity' },
-  ]
-
   return (
-    <div className="dash-wrap">
-
-      {/* Navbar */}
-      <header className="dash-nav">
-        <Link to="/" className="dash-brand">Panther Ledger</Link>
-        <div className="dash-nav-right">
-          <button className="dash-icon-btn"><Icon name="bell" /></button>
-          <button className="dash-icon-btn"><Icon name="search" /></button>
-          <button className="dash-icon-btn" onClick={() => { clearSession(); navigate('/login') }} title="Log out">
-            <Icon name="logout" />
-          </button>
-          <div className="dash-avatar">{userInitials}</div>
-        </div>
-      </header>
-
-      <div className="dash-body">
-
-        {/* Sidebar */}
-        <aside className="dash-sidebar">
-          <p className="sidebar-section-label">Main</p>
-          {mainNav.map(item => (
-            <button
-              key={item.id}
-              className={`sidebar-item ${item.id === 'upload' ? 'active' : ''}`}
-              onClick={() => item.path ? navigate(item.path) : null}
-            >
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-          <p className="sidebar-section-label" style={{ marginTop: '1.5rem' }}>Finance</p>
-          {financeNav.map(item => (
-            <button key={item.id} className="sidebar-item">
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-        </aside>
-
-        {/* Main */}
-        <main className="dash-main">
-          <div className="up-page-header">
+    <AppLayout activeNav="upload">
+      <div className="up-page-header">
             <h1 className="rc-title">Upload Statement</h1>
             <p className="up-subtitle">Import PDF statements of your debit or credit card transactions.</p>
           </div>
@@ -311,15 +234,8 @@ const Upload = () => {
             </div>
           </div>
 
-          <p className="dash-footer-text">Florida International University</p>
-        </main>
-      </div>
-
-      <button className="chat-fab">
-        <Icon name="chat" size={20} />
-        <span className="chat-dot" />
-      </button>
-    </div>
+      <p className="dash-footer-text">Florida International University</p>
+    </AppLayout>
   )
 }
 

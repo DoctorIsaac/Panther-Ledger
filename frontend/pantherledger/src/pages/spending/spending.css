@@ -335,11 +335,18 @@
   transition: width 0.4s ease;
 }
 
-/* ── Category top contributors ── */
+/* ── Category transaction list ── */
 .sp-cat-top-tx {
   margin-top: 0.6rem;
   padding-top: 0.55rem;
   border-top: 1px solid #e5e7eb;
+}
+
+.sp-cat-tx-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .sp-cat-top-tx-label {
@@ -348,7 +355,15 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #9ca3af;
-  margin-bottom: 0.4rem;
+  margin: 0;
+}
+
+.sp-cat-tx-count {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
 }
 
 .sp-cat-top-tx-empty {
@@ -356,24 +371,42 @@
   color: #9ca3af;
 }
 
+.sp-cat-tx-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-cat-tx-list::-webkit-scrollbar {
+  width: 4px;
+}
+.sp-cat-tx-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sp-cat-tx-list::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
 .sp-cat-tx-row {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.28rem 0;
+  padding: 0.32rem 0.25rem;
+  border-radius: 6px;
+  transition: background 0.12s;
 }
 
-.sp-cat-tx-rank {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #fff;
+.sp-cat-tx-row:hover {
+  background: #f3f4f6;
+}
+
+.sp-cat-tx-date {
+  font-size: 0.72rem;
+  color: #9ca3af;
   flex-shrink: 0;
+  min-width: 38px;
 }
 
 .sp-cat-tx-name {
@@ -383,12 +416,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.sp-cat-tx-date {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  flex-shrink: 0;
+  text-transform: capitalize;
 }
 
 .sp-cat-tx-amt {

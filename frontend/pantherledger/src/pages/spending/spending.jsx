@@ -1,30 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { api, getSession, clearSession } from '../../api'
-import '../dashboard/dashboard.css'
+import { useNavigate } from 'react-router-dom'
+import { api, getSession } from '../../api'
+import { AppLayout, Icon } from '../../components'
 import './spending.css'
-
-/* ── Icons ── */
-const Icon = ({ name, size = 18 }) => {
-  const s = { width: size, height: size }
-  const base = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
-  switch (name) {
-    case 'grid':         return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    case 'dollar':       return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    case 'users':        return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    case 'card':         return <svg style={s} viewBox="0 0 24 24" {...base}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-    case 'activity':     return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    case 'bell':         return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    case 'search':       return <svg style={s} viewBox="0 0 24 24" {...base}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    case 'logout':       return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    case 'upload':       return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    case 'chat':         return <svg style={s} viewBox="0 0 24 24" {...base}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    case 'chevron-left': return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="15 18 9 12 15 6"/></svg>
-    case 'chevron-right':return <svg style={s} viewBox="0 0 24 24" {...base}><polyline points="9 18 15 12 9 6"/></svg>
-    case 'x':            return <svg style={s} viewBox="0 0 24 24" {...base}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    default:             return null
-  }
-}
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const CAT_COLORS  = ['#081E3F','#B5934C','#3b82f6','#22c55e','#ef4444','#a855f7','#f97316','#06b6d4','#ec4899','#84cc16']
@@ -66,7 +44,7 @@ function buildCategoryData(expenses, year, month) {
   }))
 }
 
-function topTxForCategory(expenses, year, month, categoryLabel, limit = 3) {
+function txForCategory(expenses, year, month, categoryLabel) {
   return expenses
     .filter(e => {
       if (e.expense_type !== 'expense' || !e.purchase_date) return false
@@ -74,8 +52,7 @@ function topTxForCategory(expenses, year, month, categoryLabel, limit = 3) {
       if (d.getFullYear() !== year || d.getMonth() !== month) return false
       return (e.category_name || 'Other') === categoryLabel
     })
-    .sort((a, b) => (b.amount || 0) - (a.amount || 0))
-    .slice(0, limit)
+    .sort((a, b) => (b.purchase_date || '').localeCompare(a.purchase_date || ''))
 }
 
 const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -493,8 +470,6 @@ function SankeyChart({ catData, totalExpenses }) {
 const Spending = () => {
   const navigate  = useNavigate()
   const session   = getSession()
-  const firstName = session?.first_name || session?.username || 'there'
-
   const [expenses,  setExpenses]  = useState([])
   const [loading,   setLoading]   = useState(true)
   const [pageTab,   setPageTab]   = useState('overview')   // 'overview' | 'cashflow'
@@ -568,56 +543,10 @@ const Spending = () => {
     }).sort((a, b) => (b.purchase_date || '').localeCompare(a.purchase_date || ''))
   }, [expenses, year, month, selected])
 
-  const mainNav = [
-    { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',   path: '/dashboard'    },
-    { id: 'transactions', label: 'Transactions', icon: 'dollar', path: '/transactions' },
-    { id: 'recurring',    label: 'Recurring',    icon: 'users',  path: '/recurring'    },
-    { id: 'upload',       label: 'Upload',       icon: 'upload', path: '/upload'       },
-  ]
-  const financeNav = [
-    { id: 'accounts', label: 'Accounts', icon: 'card'     },
-    { id: 'spending', label: 'Spending', icon: 'activity', path: '/spending' },
-  ]
-
   const pctChange = lastTotal ? ((thisTotal - lastTotal) / lastTotal) * 100 : null
 
   return (
-    <div className="dash-wrap">
-      <header className="dash-nav">
-        <Link to="/" className="dash-brand">Panther Ledger</Link>
-        <div className="dash-nav-right">
-          <button className="dash-icon-btn"><Icon name="bell" /></button>
-          <button className="dash-icon-btn"><Icon name="search" /></button>
-          <button className="dash-icon-btn" onClick={() => { clearSession(); navigate('/login') }} title="Log out">
-            <Icon name="logout" />
-          </button>
-          <div className="dash-avatar">{firstName.slice(0, 2).toUpperCase()}</div>
-        </div>
-      </header>
-
-      <div className="dash-body">
-        <aside className="dash-sidebar">
-          <p className="sidebar-section-label">Main</p>
-          {mainNav.map(item => (
-            <button key={item.id} className="sidebar-item" onClick={() => navigate(item.path)}>
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-          <p className="sidebar-section-label" style={{ marginTop: '1.5rem' }}>Finance</p>
-          {financeNav.map(item => (
-            <button
-              key={item.id}
-              className={`sidebar-item ${item.id === 'spending' ? 'active' : ''}`}
-              onClick={() => item.path && navigate(item.path)}
-            >
-              <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
-              {item.label}
-            </button>
-          ))}
-        </aside>
-
-        <main className="dash-main">
+    <AppLayout activeNav="spending">
           {/* Header row */}
           <div className="sp-page-header">
             <div>
@@ -736,7 +665,7 @@ const Spending = () => {
                           <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>No expenses this month.</p>
                         ) : catData.map(cat => {
                           const isOpen = selected === cat.label
-                          const topTx  = isOpen ? topTxForCategory(expenses, year, month, cat.label) : []
+                          const catTx  = isOpen ? txForCategory(expenses, year, month, cat.label) : []
                           return (
                             <div
                               key={cat.label}
@@ -759,17 +688,27 @@ const Spending = () => {
 
                               {isOpen && (
                                 <div className="sp-cat-top-tx" onClick={e => e.stopPropagation()}>
-                                  <p className="sp-cat-top-tx-label">Top contributors</p>
-                                  {topTx.length === 0 ? (
+                                  <div className="sp-cat-tx-header">
+                                    <p className="sp-cat-top-tx-label">
+                                      {MONTH_NAMES[month]} transactions
+                                    </p>
+                                    <span className="sp-cat-tx-count" style={{ background: cat.color }}>
+                                      {catTx.length}
+                                    </span>
+                                  </div>
+                                  {catTx.length === 0 ? (
                                     <p className="sp-cat-top-tx-empty">No transactions found.</p>
-                                  ) : topTx.map((tx, i) => (
-                                    <div key={i} className="sp-cat-tx-row">
-                                      <span className="sp-cat-tx-rank" style={{ background: cat.color }}>{i + 1}</span>
-                                      <span className="sp-cat-tx-name">{tx.name || tx.description || 'Transaction'}</span>
-                                      <span className="sp-cat-tx-date">{fmtDate(tx.purchase_date)}</span>
-                                      <span className="sp-cat-tx-amt">${(tx.amount || 0).toFixed(2)}</span>
+                                  ) : (
+                                    <div className="sp-cat-tx-list">
+                                      {catTx.map((tx, i) => (
+                                        <div key={i} className="sp-cat-tx-row">
+                                          <span className="sp-cat-tx-date">{fmtDate(tx.purchase_date)}</span>
+                                          <span className="sp-cat-tx-name">{tx.name || tx.description || 'Transaction'}</span>
+                                          <span className="sp-cat-tx-amt">${(tx.amount || 0).toFixed(2)}</span>
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -793,14 +732,7 @@ const Spending = () => {
               <p className="dash-footer-text">Florida International University</p>
             </>
           )}
-        </main>
-      </div>
-
-      <button className="chat-fab">
-        <Icon name="chat" size={20} />
-        <span className="chat-dot" />
-      </button>
-    </div>
+    </AppLayout>
   )
 }
 

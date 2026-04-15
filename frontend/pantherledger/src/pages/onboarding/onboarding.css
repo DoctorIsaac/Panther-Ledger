@@ -59,14 +59,8 @@
 .ob-pl-badge {
   width: 64px;
   height: 64px;
-  background-color: #B5934C;
   border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  font-weight: 900;
-  color: #ffffff;
+  object-fit: contain;
   margin-bottom: 0.25rem;
 }
 
