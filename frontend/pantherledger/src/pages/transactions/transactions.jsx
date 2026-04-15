@@ -263,8 +263,8 @@ const Transactions = () => {
     { id: 'upload',       label: 'Upload',       icon: 'upload', path: '/upload'       },
   ]
   const financeNav = [
-    { id: 'accounts', label: 'Accounts', icon: 'card'     },
-    { id: 'spending', label: 'Spending', icon: 'activity' },
+    { id: 'accounts', label: 'Accounts', icon: 'card'                },
+    { id: 'spending', label: 'Spending', icon: 'activity', path: '/spending' },
   ]
 
   return (
@@ -300,7 +300,7 @@ const Transactions = () => {
           ))}
           <p className="sidebar-section-label" style={{ marginTop: '1.5rem' }}>Finance</p>
           {financeNav.map(item => (
-            <button key={item.id} className="sidebar-item">
+            <button key={item.id} className="sidebar-item" onClick={() => item.path && navigate(item.path)}>
               <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
               {item.label}
             </button>

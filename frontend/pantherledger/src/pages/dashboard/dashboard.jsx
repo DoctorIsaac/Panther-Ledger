@@ -335,7 +335,7 @@ const Dashboard = () => {
   ]
   const financeNav = [
     { id: 'accounts', label: 'Accounts', icon: 'card'     },
-    { id: 'spending', label: 'Spending', icon: 'activity' },
+    { id: 'spending', label: 'Spending', icon: 'activity', path: '/spending' },
   ]
 
   return (
@@ -375,7 +375,7 @@ const Dashboard = () => {
             <button
               key={item.id}
               className={`sidebar-item ${activeNav === item.id ? 'active' : ''}`}
-              onClick={() => setActiveNav(item.id)}
+              onClick={() => item.path ? navigate(item.path) : setActiveNav(item.id)}
             >
               <span className="sidebar-item-icon"><Icon name={item.icon} size={17} /></span>
               {item.label}

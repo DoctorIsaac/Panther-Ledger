@@ -11,6 +11,7 @@ import Upload from './pages/upload'
 import Transactions from './pages/transactions'
 import FeaturesPage from './pages/features'
 import TeamPage from './pages/team'
+import Spending from './pages/spending'
 import './App.css'
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/team" element={<TeamPage />} />
+        <Route path="/spending" element={<Spending />} />
       </Routes>
     </Router>
   )
