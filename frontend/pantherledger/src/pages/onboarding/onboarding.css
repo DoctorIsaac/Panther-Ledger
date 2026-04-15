@@ -8,21 +8,12 @@
   background-color: #081E3F;
 }
 
-/* ── Header ── */
-.ob-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  flex-shrink: 0;
-}
-
 .ob-brand {
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
   text-decoration: none;
+  letter-spacing: 0.02em;
 }
 
 .ob-step-label {
@@ -56,12 +47,22 @@
   gap: 1rem;
 }
 
-.ob-pl-badge {
-  width: 64px;
-  height: 64px;
-  border-radius: 14px;
-  object-fit: contain;
+.ob-pl-badge-wrap {
+  width: 72px;
+  height: 72px;
+  background: #B5934C;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 0.25rem;
+  flex-shrink: 0;
+}
+
+.ob-pl-badge {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
 }
 
 .ob-left-title {
