@@ -94,7 +94,7 @@ const Signup = () => {
         address:      address.trim(),
         zip_code:     zipCode.trim(),
       })
-      setSession({ user_id: data.user_id, username: data.user_name, first_name: firstName })
+      setSession({ user_id: data.user_id, username: data.user_name, first_name: firstName, session_token: data.session_token })
       navigate('/onboarding')
     } catch (err) {
       setError(err.detail || 'Sign up failed. Please try again.')

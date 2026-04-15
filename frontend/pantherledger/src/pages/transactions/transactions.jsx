@@ -250,8 +250,9 @@ const Transactions = () => {
               <h1 className="rc-title">Transactions</h1>
               <p className="tx-page-sub">{stats.count} total transactions</p>
             </div>
-            <button className="tx-add-btn" onClick={() => setShowModal(true)}>
-              <Icon name="plus" size={15} /> Add Transaction
+            <button className="rc-add-btn" onClick={() => setShowModal(true)}>
+              <Icon name="plus" size={15} />
+              Add Transaction
             </button>
           </div>
 
@@ -282,16 +283,16 @@ const Transactions = () => {
               </div>
 
               {/* Filter bar */}
-              <div className="tx-filter-bar" onClick={e => e.stopPropagation()}>
-                <div className="tx-search-wrap">
-                  <Icon name="search" size={14} />
-                  <input
-                    className="tx-search-input"
-                    placeholder="Search transactions…"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                  />
-                </div>
+              <div className="rc-filter-bar" onClick={e => e.stopPropagation()}>
+                    <div className="rc-search-wrap">
+                      <Icon name="search" size={14} />
+                      <input
+                        className="rc-search-input"
+                        placeholder="Search recurring..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                      />
+                    </div>
 
                 {/* Type filter */}
                 <div className="tx-drop-wrap">

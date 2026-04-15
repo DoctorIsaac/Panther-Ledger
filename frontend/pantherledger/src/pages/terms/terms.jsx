@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import img from '../../assets/logo.png'
 import './terms.css'
 
 const SECTIONS = [
@@ -92,9 +93,14 @@ const Terms = () => {
     <div className="terms-page">
       {/* Header */}
       <div className="terms-header">
-        <span className="terms-brand">Panther Ledger</span>
+        <Link to="/" className="dash-brand">
+                <img src={img} alt="" className="dash-brand-logo" />
+                Panther Ledger
+        </Link>
         <Link to="/signup" className="terms-back-link">← Back to sign up</Link>
       </div>
+
+ 
 
       <div className="terms-body">
         {/* Left panel */}

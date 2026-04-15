@@ -44,9 +44,17 @@ def signup(data: SignupRequest):
             address=data.address,
             zip_code=data.zip_code,
         )
-        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    # Create a session token immediately so the user is logged in after signup
+    token = secrets.token_hex(32)
+    users.update_one(
+        {"username": data.username},
+        {"$set": {"session_token": token, "token_created_at": datetime.now(timezone.utc)}}
+    )
+    result["session_token"] = token
+    return result
 
 
 @router.post("/login")

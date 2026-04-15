@@ -1,3 +1,4 @@
+import re as _re
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from bson import ObjectId, Decimal128
@@ -262,6 +263,34 @@ def display_recurring_entries(user_id: str):
             r["description"] = decrypt_field(r["description"])
     return results
 
+# Patterns used to normalize transaction names for recurring detection.
+# Bank statements embed the authorization date in the description
+# (e.g. "Recurring Payment authorized on 12/29 Apple.Com/Bill"), which
+# makes every month look like a unique name.  We strip that noise so the
+# merchant name is the stable grouping key.
+_STRIP_AUTH_DATE_RE = _re.compile(
+    r'\bauthorized\s+on\s+\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b', _re.IGNORECASE
+)
+_STRIP_ON_DATE_RE = _re.compile(
+    r'\bon\s+\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b', _re.IGNORECASE
+)
+_TX_PREFIXES = (
+    'recurring payment ', 'recurring purchase ', 'recurring ',
+    'purchase ', 'payment ',
+)
+
+def _merchant_key(name: str) -> str:
+    """Return a stable merchant identifier stripped of dates and banking boilerplate."""
+    n = _STRIP_AUTH_DATE_RE.sub('', name)
+    n = _STRIP_ON_DATE_RE.sub('', n)
+    n_lower = n.strip().lower()
+    for prefix in _TX_PREFIXES:
+        if n_lower.startswith(prefix):
+            n_lower = n_lower[len(prefix):]
+            break
+    return ' '.join(n_lower.split())
+
+
 def _infer_frequency(dates: List[str]) -> str:
     """Infer recurring frequency from a sorted list of YYYY-MM-DD date strings."""
     parsed = []
@@ -307,14 +336,18 @@ def detect_and_flag_recurring(user_id: str) -> int:
     if not all_txns:
         return 0
 
-    # Group by (name, amount, expense_type)
+    # Group by (merchant_key, amount, expense_type).
+    # merchant_key strips embedded authorization dates and banking prefixes so
+    # that "recurring payment authorized on 12/29 apple.com/bill" and
+    # "recurring payment authorized on 01/20 apple.com/bill" map to the same
+    # group ("apple.com/bill") and can be detected as recurring.
     groups: dict = {}
     for txn in all_txns:
         try:
             amt = str(Decimal(str(txn["amount"])).quantize(Decimal("0.01")))
         except Exception:
             amt = "0.00"
-        key = (txn.get("name", ""), amt, txn.get("expense_type", "expense"))
+        key = (_merchant_key(txn.get("name", "")), amt, txn.get("expense_type", "expense"))
         groups.setdefault(key, []).append(txn)
 
     flagged_groups = 0
@@ -322,7 +355,7 @@ def detect_and_flag_recurring(user_id: str) -> int:
     for key, txns in groups.items():
         distinct_docs = {str(t["document_ref"]) for t in txns if t.get("document_ref")}
 
-        if len(distinct_docs) >= 3:
+        if len(distinct_docs) >= 5:
             dates = sorted(t["purchase_date"] for t in txns if t.get("purchase_date"))
             frequency = _infer_frequency(dates)
 

@@ -222,7 +222,32 @@ const Recurring = () => {
               {/* Content grid */}
               <div className="rc-content-grid">
 
-                {/* Left: filter + list */}
+                {/* Left: calendar + due soon (main focus) */}
+                <div className="rc-right-col">
+                  <Calendar items={items} />
+
+                  <div className="rc-due-soon">
+                    <p className="rc-due-soon-title">DUE SOON</p>
+                    {dueSoon.length === 0 ? (
+                      <p style={{ color: '#9ca3af', fontSize: '0.85rem' }}>Nothing due in the next 7 days.</p>
+                    ) : dueSoon.map(item => {
+                      const isIncome = item.expense_type === 'deposit'
+                      return (
+                        <div key={item.expense_id} className="rc-due-row">
+                          <div className="rc-due-info">
+                            <span className="rc-due-name" style={{ textTransform: 'capitalize' }}>{item.name}</span>
+                            <span className="rc-due-date">{fmtShort(item.nextDate)}</span>
+                          </div>
+                          <span className={`rc-due-amount ${isIncome ? 'green' : 'red'}`}>
+                            {isIncome ? '+' : '-'}${Number(item.amount).toFixed(2)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Right: filter + list */}
                 <div className="rc-list-col">
 
                   {/* Filter bar */}
@@ -289,7 +314,7 @@ const Recurring = () => {
                   <div className="rc-item-list">
                     {filtered.length === 0 ? (
                       <p className="rc-empty">
-                        {items.length === 0 ? 'No recurring items yet. Once Peppy see three recurring transactions, they will appear here.' : 'No items match your filters.'}
+                        {items.length === 0 ? 'No recurring items yet. Once Peppy sees the same charge across five statements, it will appear here.' : 'No items match your filters.'}
                       </p>
                     ) : filtered.map((item, idx) => {
                       const isActive  = activeStates[item.expense_id]
@@ -325,31 +350,6 @@ const Recurring = () => {
                             </span>
                             <Toggle checked={!!isActive} onChange={() => toggleItem(item.expense_id)} />
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Right: calendar + due soon */}
-                <div className="rc-right-col">
-                  <Calendar items={items} />
-
-                  <div className="rc-due-soon">
-                    <p className="rc-due-soon-title">DUE SOON</p>
-                    {dueSoon.length === 0 ? (
-                      <p style={{ color: '#9ca3af', fontSize: '0.85rem' }}>Nothing due in the next 7 days.</p>
-                    ) : dueSoon.map(item => {
-                      const isIncome = item.expense_type === 'deposit'
-                      return (
-                        <div key={item.expense_id} className="rc-due-row">
-                          <div className="rc-due-info">
-                            <span className="rc-due-name" style={{ textTransform: 'capitalize' }}>{item.name}</span>
-                            <span className="rc-due-date">{fmtShort(item.nextDate)}</span>
-                          </div>
-                          <span className={`rc-due-amount ${isIncome ? 'green' : 'red'}`}>
-                            {isIncome ? '+' : '-'}${Number(item.amount).toFixed(2)}
-                          </span>
                         </div>
                       )
                     })}

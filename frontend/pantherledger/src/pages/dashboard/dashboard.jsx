@@ -1,127 +1,165 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, getSession } from '../../api'
 import { AppLayout, Icon } from '../../components'
 import './dashboard.css'
 
-/* ── Spend chart helpers ── */
-function buildDailyChart(expenses, year, month) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const daily = new Array(daysInMonth + 1).fill(0)
+/* ── Monthly net cash flow helpers ── */
+function buildMonthlyNetFlow(expenses) {
+  const months = {}
   for (const e of expenses) {
-    if (e.expense_type !== 'expense' || !e.purchase_date) continue
+    if (!e.purchase_date) continue
     const d = new Date(e.purchase_date + 'T00:00:00')
-    if (d.getFullYear() !== year || d.getMonth() !== month) continue
-    daily[d.getDate()] += e.amount || 0
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    if (!months[key]) months[key] = { deposits: 0, expenses: 0 }
+    if (e.expense_type === 'deposit') months[key].deposits += e.amount || 0
+    else months[key].expenses += e.amount || 0
   }
-  const cumDaily = []
-  let cum = 0
-  for (let i = 0; i <= daysInMonth; i++) {
-    cum += daily[i]
-    cumDaily.push(cum)
-  }
-  return { cumDaily, daysInMonth, total: cum }
+  return Object.keys(months).sort().slice(-6).map(key => {
+    const [year, month] = key.split('-').map(Number)
+    const net = months[key].deposits - months[key].expenses
+    const label = new Date(year, month - 1, 1)
+      .toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+    return { key, label, net }
+  })
 }
 
-/* ── Interactive spend chart ── */
-const DASH_X_MIN = 5, DASH_X_MAX = 248, DASH_Y_TOP = 16, DASH_Y_BOTTOM = 68
-const DASH_VB_W = 253, DASH_VB_H = 76
+/* ── Net cash flow bar chart ── */
+function NetCashFlowChart({ data }) {
+  const [hovered, setHovered] = useState(null)
 
-function SpendChart({ thisChart, lastChart, chartMax }) {
-  const svgRef = useRef(null)
-  const [hover, setHover] = useState(null)
-
-  const days = thisChart.daysInMonth
-
-  function dayToX(day, totalDays) {
-    return DASH_X_MIN + (day / totalDays) * (DASH_X_MAX - DASH_X_MIN)
-  }
-  function valToY(val) {
-    const safe = chartMax || 1
-    return DASH_Y_BOTTOM - (val / safe) * (DASH_Y_BOTTOM - DASH_Y_TOP)
-  }
-  function buildPath(cumData, totalDays, upTo) {
-    const limit = upTo !== undefined ? Math.min(upTo, totalDays) : totalDays
-    const pts = []
-    for (let i = 0; i <= limit; i++) {
-      pts.push([+dayToX(i, totalDays).toFixed(1), +valToY(cumData[i] || 0).toFixed(1)])
-    }
-    if (pts.length < 2) return { line: '', area: '', dot: null }
-    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]},${p[1]}`).join(' ')
-    const last = pts[pts.length - 1]
-    const area = `${line} L ${last[0]},${DASH_Y_BOTTOM} L ${pts[0][0]},${DASH_Y_BOTTOM} Z`
-    return { line, area, dot: last }
+  if (!data || data.length === 0) {
+    return <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginTop: '1rem' }}>No transaction data yet.</p>
   }
 
-  const today = new Date().getDate()
-  const thisPts = buildPath(thisChart.cumDaily, days, today)
-  const lastPts = buildPath(lastChart.cumDaily, lastChart.daysInMonth)
+  const VB_W = 420, VB_H = 180
+  const ML = 52, MR = 12, MT = 10, MB = 28
+  const plotH = VB_H - MT - MB
+  const plotW = VB_W - ML - MR
 
-  function handleMouseMove(e) {
-    if (!svgRef.current) return
-    const rect = svgRef.current.getBoundingClientRect()
-    const svgX = (e.clientX - rect.left) / rect.width * DASH_VB_W
-    const day = Math.round(((svgX - DASH_X_MIN) / (DASH_X_MAX - DASH_X_MIN)) * days)
-    setHover(Math.max(0, Math.min(day, Math.min(today, days))))
-  }
+  const maxAbs = Math.max(...data.map(d => Math.abs(d.net)), 1)
+  const scale  = Math.ceil(maxAbs / 100) * 100
 
-  const hoverThisVal = hover !== null ? (thisChart.cumDaily[hover] || 0) : null
-  const hoverLastVal = hover !== null ? (lastChart.cumDaily[Math.min(hover, lastChart.daysInMonth)] || 0) : null
-  const hoverX       = hover !== null ? dayToX(hover, days) : null
+  const zeroY  = MT + plotH / 2
+  const yOf    = val => MT + plotH / 2 - (val / scale) * (plotH / 2)
+  const ticks  = [-scale, -scale / 2, 0, scale / 2, scale]
+
+  const barGap = plotW / data.length
+  const barW   = barGap * 0.55
 
   return (
-    <div style={{ position: 'relative' }}>
-      <svg
-        ref={svgRef}
-        className="spend-chart"
-        viewBox={`0 0 ${DASH_VB_W} ${DASH_VB_H}`}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => setHover(null)}
-        style={{ cursor: 'crosshair' }}
-      >
-        <defs>
-          <linearGradient id="dashAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#081E3F" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#081E3F" stopOpacity="0.01" />
-          </linearGradient>
-        </defs>
-        {lastPts.line && <path d={lastPts.line} fill="none" stroke="#B5934C" strokeWidth="1.5" strokeDasharray="5 3" />}
-        {thisPts.line && <path d={thisPts.area} fill="url(#dashAreaGrad)" />}
-        {thisPts.line && <path d={thisPts.line} fill="none" stroke="#081E3F" strokeWidth="2" />}
-        {thisPts.dot && <circle cx={thisPts.dot[0]} cy={thisPts.dot[1]} r="3.5" fill="#081E3F" stroke="#fff" strokeWidth="1.5" />}
-        {hover !== null && (
-          <>
-            <line x1={hoverX} x2={hoverX} y1={DASH_Y_TOP} y2={DASH_Y_BOTTOM} stroke="#081E3F" strokeWidth="1" strokeDasharray="3 2" opacity="0.4" />
-            <circle cx={hoverX} cy={valToY(hoverThisVal)} r="4" fill="#081E3F" stroke="#fff" strokeWidth="2" />
-            <circle cx={hoverX} cy={valToY(hoverLastVal)} r="3.5" fill="#B5934C" stroke="#fff" strokeWidth="1.5" />
-          </>
-        )}
-        <rect x={DASH_X_MIN} y={DASH_Y_TOP} width={DASH_X_MAX - DASH_X_MIN} height={DASH_Y_BOTTOM - DASH_Y_TOP} fill="transparent" />
-      </svg>
-      {hover !== null && (
-        <div className="dash-chart-tooltip">
-          <p className="dash-tooltip-day">Day {hover}</p>
-          <div className="dash-tooltip-row">
-            <span className="dash-tooltip-dot" style={{ background: '#081E3F' }} />
-            <span>This month: <strong>${hoverThisVal.toFixed(2)}</strong></span>
-          </div>
-          <div className="dash-tooltip-row">
-            <span className="dash-tooltip-dot" style={{ background: '#B5934C' }} />
-            <span>Last month: <strong>${hoverLastVal.toFixed(2)}</strong></span>
-          </div>
-        </div>
-      )}
-    </div>
+    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} style={{ width: '100%', display: 'block' }}>
+      {/* Grid lines */}
+      {ticks.map((v, i) => (
+        <line key={i}
+          x1={ML} x2={VB_W - MR} y1={yOf(v)} y2={yOf(v)}
+          stroke={v === 0 ? '#d1d5db' : '#f3f4f6'}
+          strokeWidth={v === 0 ? 1 : 0.75}
+        />
+      ))}
+
+      {/* Y-axis labels */}
+      {ticks.map((v, i) => (
+        <text key={i} x={ML - 6} y={yOf(v) + 4}
+          textAnchor="end" fontSize="9.5" fill="#9ca3af">
+          {v === 0 ? '$0' : v > 0 ? `$${v}` : `-$${Math.abs(v)}`}
+        </text>
+      ))}
+
+      {/* Bars */}
+      {data.map((d, i) => {
+        const cx   = ML + (i + 0.5) * barGap
+        const barH = Math.max(Math.abs((d.net / scale) * (plotH / 2)), 1)
+        const y    = d.net >= 0 ? yOf(d.net) : zeroY
+        return (
+          <rect key={i}
+            x={cx - barW / 2} y={y} width={barW} height={barH}
+            fill={d.net >= 0 ? '#22c55e' : '#ef4444'}
+            opacity={hovered === i ? 1 : 0.82}
+            rx={2}
+            style={{ cursor: 'pointer', transition: 'opacity 0.15s' }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          />
+        )
+      })}
+
+      {/* Hover value label */}
+      {hovered !== null && (() => {
+        const d  = data[hovered]
+        const cx = ML + (hovered + 0.5) * barGap
+        return (
+          <text x={cx} y={Math.max(yOf(d.net) - 5, MT + 10)}
+            textAnchor="middle" fontSize="10" fontWeight="600"
+            fill={d.net >= 0 ? '#16a34a' : '#dc2626'}>
+            {d.net >= 0 ? '+' : '-'}${Math.abs(d.net).toFixed(0)}
+          </text>
+        )
+      })()}
+
+      {/* X-axis labels */}
+      {data.map((d, i) => (
+        <text key={i} x={ML + (i + 0.5) * barGap} y={VB_H - MB + 16}
+          textAnchor="middle" fontSize="9.5" fill="#6b7280">
+          {d.label}
+        </text>
+      ))}
+    </svg>
   )
 }
 
 /* ── Greeting ── */
-const getGreeting = () => {
+const morning = ['Good morning', 'Rise & shine!', 'Top of the morning!', 'Early bird! Love the energy.']
+const afternoon = ['Good afternoon', 'Afternoon!', 'Welcome back!', 'Hey, glad you stopped by']
+const evening = ['Good evening', 'Evening!', 'Wrapping up the day?', 'Still at it — respect.']
+
+export const getGreeting = () => {
   const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 17) return 'Good afternoon'
-  return 'Good evening'
+  let list = morning
+  if (h >= 12 && h < 17) list = afternoon
+  else if (h >= 17) list = evening
+  const index = new Date().getSeconds() % list.length
+  return list[index]
 }
+
+/* ── Peppy insight ── */
+function getInsight(analytics, pieData, monthlyNetFlow) {
+  const expenses = analytics?.total_expenses || 0
+  const deposits = analytics?.total_deposits || 0
+  const net = deposits - expenses
+
+  if (expenses === 0 && deposits === 0) {
+    return "No transactions yet this month. Upload a bank statement and I'll get to work! 📂"
+  }
+
+  const topCat = pieData[0]
+  if (topCat && topCat.pct > 0.5) {
+    return `Over half your spending went to "${topCat.label}" this month. Worth a closer look? 🔍`
+  }
+
+  if (net > 0) {
+    return `You're ahead by $${net.toFixed(2)} this month. Saving streak — keep it going! 🚀`
+  }
+
+  if (net < 0 && Math.abs(net) < expenses * 0.1) {
+    return `Almost balanced! You're only $${Math.abs(net).toFixed(2)} in the red. So close! 💪`
+  }
+
+  if (net < -500) {
+    return `Spending outpaced income by $${Math.abs(net).toFixed(2)} this month. Let's see where it went. 👀`
+  }
+
+  if (monthlyNetFlow.length >= 2) {
+    const last = monthlyNetFlow[monthlyNetFlow.length - 1]
+    const prev = monthlyNetFlow[monthlyNetFlow.length - 2]
+    if (last && prev && last.net > prev.net) {
+      return `Net cash flow improved from last month. You're trending in the right direction! 📈`
+    }
+  }
+
+  return `You've got ${pieData.length} spending categories tracked. Knowledge is power! 🧠`
+}
+
 
 /* ── Pie chart data ── */
 const PIE_COLORS = ['#081E3F', '#B5934C', '#3b82f6', '#22c55e', '#ef4444', '#a855f7', '#f97316', '#06b6d4']
@@ -348,69 +386,98 @@ const Dashboard = () => {
       .finally(() => setLoadingData(false))
   }, [])
 
-  const pieData = buildPieData(expenses)
-  const pieTotal = pieData.reduce((s, c) => s + c.amount, 0)
-
-  const now = new Date()
-  const thisYear = now.getFullYear()
-  const thisMonth = now.getMonth()
-  const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1
-  const lastYear  = thisMonth === 0 ? thisYear - 1 : thisYear
-  const thisChart  = buildDailyChart(expenses, thisYear, thisMonth)
-  const lastChart  = buildDailyChart(expenses, lastYear, lastMonth)
-  const chartMax   = Math.max(thisChart.total, lastChart.total, 1)
+  const pieData        = buildPieData(expenses)
+  const pieTotal       = pieData.reduce((s, c) => s + c.amount, 0)
+  const monthlyNetFlow = buildMonthlyNetFlow(expenses)
 
   const recentTx = [...expenses]
     .sort((a, b) => (b.purchase_date || '').localeCompare(a.purchase_date || ''))
     .slice(0, 5)
 
-  const totalSpend = analytics ? `$${analytics.total_expenses.toLocaleString()}` : '—'
   const firstName = session?.first_name || session?.username || 'there'
+  const totalExpenses = analytics?.total_expenses || 0
+  const totalDeposits = analytics?.total_deposits || 0
+  const netThisMonth  = totalDeposits - totalExpenses
+  const monthLabel    = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const insight       = getInsight(analytics, pieData, monthlyNetFlow)
 
   return (
     <AppLayout activeNav="dashboard">
-      <h1 className="dash-greeting">
-        {getGreeting()}, <span className="dash-name">{firstName}</span> 👋
-      </h1>
+
+      {/* ── Hero banner ── */}
+      <div className="dash-hero">
+        <span className="dash-hero-ring dash-hero-ring-1" />
+        <span className="dash-hero-ring dash-hero-ring-2" />
+
+        <div className="dash-hero-left">
+          <p className="dash-hero-eyebrow">{monthLabel}</p>
+          <h1 className="dash-hero-greeting">
+            {getGreeting()}, <span className="dash-hero-name">{firstName}</span> 👋
+          </h1>
+          <p className="dash-hero-sub">Here's your financial snapshot for today.</p>
+        </div>
+
+        <div className="dash-hero-metrics">
+          <div className="dash-hero-metric">
+            <span className="dash-hero-metric-label">EXPENSES</span>
+            <span className="dash-hero-metric-val dash-hero-red">
+              -${totalExpenses.toFixed(2)}
+            </span>
+          </div>
+          <span className="dash-hero-sep" />
+          <div className="dash-hero-metric">
+            <span className="dash-hero-metric-label">INCOME</span>
+            <span className="dash-hero-metric-val dash-hero-green">
+              +${totalDeposits.toFixed(2)}
+            </span>
+          </div>
+          <span className="dash-hero-sep" />
+          <div className="dash-hero-metric">
+            <span className="dash-hero-metric-label">NET</span>
+            <span className={`dash-hero-metric-val ${netThisMonth >= 0 ? 'dash-hero-green' : 'dash-hero-red'}`}>
+              {netThisMonth >= 0 ? '+' : '-'}${Math.abs(netThisMonth).toFixed(2)}
+            </span>
+          </div>
+          <span className="dash-hero-sep" />
+          <div className="dash-hero-metric">
+            <span className="dash-hero-metric-label">TRANSACTIONS</span>
+            <span className="dash-hero-metric-val dash-hero-white">{expenses.length}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Peppy insight strip ── */}
+      <div className="dash-insight">
+        <span className="dash-insight-avatar">🐾</span>
+        <div>
+          <p className="dash-insight-label">PEPPY SAYS</p>
+          <p className="dash-insight-text">{insight}</p>
+        </div>
+      </div>
 
       {loadingData ? (
             <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading your data…</p>
           ) : (
             <>
-              {/* Top 3-col cards */}
+              {/* Top 2-col cards */}
               <div className="cards-top">
 
-                {/* Card 1 — Current Spend */}
+                {/* Card 1 — Net Cash Flow */}
                 <div className="card">
                   <div className="card-header-row">
-                    <p className="card-eyebrow">Current Spend — This Month</p>
+                    <p className="card-eyebrow">Net Cash Flow by Month</p>
                     <button className="card-link-btn" onClick={() => navigate('/spending')}>
                       <Icon name="arrow-right" size={16} />
                     </button>
                   </div>
-                  <p className="spend-amount">{totalSpend}</p>
-                  {analytics && (
-                    <p className="spend-trend">
-                      Net: {analytics.net >= 0 ? '+' : ''}${analytics.net.toLocaleString()} · {analytics.count} transactions
-                    </p>
-                  )}
-
-                  <SpendChart thisChart={thisChart} lastChart={lastChart} chartMax={chartMax} />
-
-                  <div className="chart-x-labels">
-                    <span>1st</span><span>8th</span><span>16th</span><span>24th</span>
-                  </div>
-                  <div className="chart-legend">
-                    <span className="legend-item"><span className="legend-line solid" />This Month</span>
-                    <span className="legend-item"><span className="legend-line dashed" />Last Month</span>
-                  </div>
+                  <NetCashFlowChart data={monthlyNetFlow} />
                 </div>
 
                 {/* Card 2 — Category Pie */}
                 <div className="card dash-pie-card">
                   <div className="card-header-row">
                     <p className="card-eyebrow">Spending by Category</p>
-                     <button className="card-link-btn" onClick={() => navigate('/spending')}>
+                    <button className="card-link-btn" onClick={() => navigate('/spending')}>
                       <Icon name="arrow-right" size={16} />
                     </button>
                   </div>
