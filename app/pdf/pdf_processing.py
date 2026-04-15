@@ -86,22 +86,33 @@ def is_amount(s: str):
 def detect_account_type(raw_text: str) -> str:
     lower = raw_text.lower()
 
-    #Checks if credit card
-    if "visa" in lower or "mastercard" in lower or "american express" in lower:
-        return "credit_card"
+    # Check bank indicators FIRST.  Wells Fargo debit-card purchases include
+    # the word "VISA" in their descriptions, so we must confirm it is not a
+    # bank account before using "visa" as a credit-card signal.
+    if "deposits/additions" in lower or "withdrawals/subtractions" in lower:
+        return "bank"
 
+    if "checking account" in lower or "savings account" in lower:
+        return "bank"
+
+    if "deposits and credits" in lower and "withdrawals" in lower:
+        return "bank"
+
+    # Credit-card-specific section headers
     if "purchases and adjustments" in lower:
         return "credit_card"
 
     if "payments and other credits" in lower:
         return "credit_card"
 
-    #Checks if checking account
-    if "checking account" in lower or "savings account" in lower:
-        return "bank"
+    # "visa" / "mastercard" / "amex" are reliable only when no bank signals
+    # were found above.  A bare "visa" could still be a debit-card reference
+    # on a bank statement, so require at least one of the stronger card words.
+    if "mastercard" in lower or "american express" in lower:
+        return "credit_card"
 
-    if "deposits and credits" in lower and "withdrawals" in lower:
-        return "bank"
+    if "visa" in lower and "withdrawals" not in lower:
+        return "credit_card"
 
     return "unknown"
 
@@ -136,8 +147,9 @@ _BALANCE_ROW_RE = re.compile(
 
 # Description keywords that signal a deposit/credit on a bank account
 _DEPOSIT_KEYWORDS_RE = re.compile(
-    r"(?i)\b(deposit|direct\s+dep|payroll|transfer\s+in|zelle\s+from"
-    r"|venmo|interest\s+paid|dividend|refund|reimburse|credit|atm\s+deposit)\b"
+    r"(?i)\b(deposit|direct\s+dep|payroll|transfer\s+in|transfer\s+from"
+    r"|zelle\s+from|venmo|interest\s+paid|dividend|refund|reimburse"
+    r"|credit|atm\s+deposit)\b"
 )
 
 #stuff
@@ -152,6 +164,10 @@ def process_transactions(pdf_path: str):
     items = []
 
     for line in rows:
+        # Skip balance summary rows (e.g. "Ending balance", "Beginning balance")
+        if _BALANCE_ROW_RE.search(line):
+            continue
+
         if not re.search(r"\d{1,2}[/-]\d{1,2}", line):
             continue
 
@@ -168,13 +184,20 @@ def process_transactions(pdf_path: str):
         if date_idx is None:
             continue
 
-        amt_idx = None
-        for i in range(len(tokens) - 1, -1, -1):
-            if is_amount(tokens[i]):
-                amt_idx = i
-                break
-        if amt_idx is None or amt_idx <= date_idx:
+        # Collect all amount token indices that appear after the date
+        all_amt_indices = [i for i in range(date_idx + 1, len(tokens)) if is_amount(tokens[i])]
+
+        if not all_amt_indices:
             continue
+
+        # Bank statements (e.g. Wells Fargo) include a running balance as the
+        # last column on every transaction row.  When two or more amounts are
+        # present the last one is that running balance; the second-to-last is
+        # the actual transaction amount.
+        if account_type == "bank" and len(all_amt_indices) >= 2:
+            amt_idx = all_amt_indices[-2]
+        else:
+            amt_idx = all_amt_indices[-1]
 
         trans_date = tokens[date_idx].replace("-", "/")
 
@@ -187,13 +210,29 @@ def process_transactions(pdf_path: str):
             continue
 
         amount_raw = clean_amount(tokens[amt_idx])
-
-        if account_type == "credit_card":
-            expense_type = "deposit" if amount_raw < 0 else "expense"
-        else:
-            expense_type = "deposit" if amount_raw > 0 else "expense"
-
         amount = abs(amount_raw)
+
+        if amount == 0:
+            continue
+
+        # Determine deposit vs. expense
+        if account_type == "credit_card":
+            # Credit card: negative amounts are payments/credits, positive are purchases
+            expense_type = "deposit" if amount_raw < 0 else "expense"
+        elif account_type == "bank":
+            # Bank statements (e.g. Wells Fargo) don't use negative signs for
+            # withdrawals — every amount is positive regardless of direction.
+            # Use description keywords to identify deposits; anything else is
+            # a withdrawal/expense.  This covers both rows that have a running
+            # balance column (2+ amounts) and intermediate rows that only show
+            # the transaction amount (1 amount).
+            if _DEPOSIT_KEYWORDS_RE.search(description):
+                expense_type = "deposit"
+            else:
+                expense_type = "expense"
+        else:
+            # Unknown account type: fall back to sign-based classification
+            expense_type = "deposit" if amount_raw > 0 else "expense"
 
         mm, dd = map(int, trans_date.split("/"))
         year = infer_year_for_mmdd(mm, statement_end_year, raw_text)

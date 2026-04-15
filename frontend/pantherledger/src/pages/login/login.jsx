@@ -86,7 +86,6 @@ const Login = () => {
               <button className="btn-primary" type="submit" disabled={loading}>
                 {loading ? 'Logging in…' : 'Log In'}
               </button>
-              <button className="btn-google" type="button">Continue with Google</button>
             </div>
           </form>
 

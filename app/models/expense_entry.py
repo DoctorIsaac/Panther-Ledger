@@ -4,7 +4,7 @@ from bson import ObjectId, Decimal128
 from app.db.db_connection import get_database
 from app.db.counters import next_counter
 from app.utils.encryption import encrypt_field, decrypt_field
-from typing import Literal
+from typing import Literal, List
 
 db = get_database()
 expenses = db["expense_entry"]
@@ -261,5 +261,89 @@ def display_recurring_entries(user_id: str):
         if r.get("description"):
             r["description"] = decrypt_field(r["description"])
     return results
+
+def _infer_frequency(dates: List[str]) -> str:
+    """Infer recurring frequency from a sorted list of YYYY-MM-DD date strings."""
+    parsed = []
+    for d in dates:
+        try:
+            parsed.append(datetime.strptime(d, "%Y-%m-%d"))
+        except Exception:
+            pass
+
+    if len(parsed) < 2:
+        return "monthly"
+
+    gaps = [(parsed[i] - parsed[i - 1]).days for i in range(1, len(parsed)) if (parsed[i] - parsed[i - 1]).days > 0]
+    if not gaps:
+        return "monthly"
+
+    avg_gap = sum(gaps) / len(gaps)
+    if avg_gap <= 10:
+        return "weekly"
+    elif avg_gap <= 20:
+        return "bi-weekly"
+    else:
+        return "monthly"
+
+
+def detect_and_flag_recurring(user_id: str) -> int:
+    """
+    Scan bank-statement transactions for a user and auto-flag recurring ones.
+
+    A charge is considered recurring when the same (name, amount, expense_type)
+    appears in at least 3 distinct uploaded bank statements (document_ref).
+    Returns the number of transaction groups newly flagged.
+    """
+    user_obj_id = ObjectId(user_id)
+
+    # Only consider transactions imported from bank statements
+    all_txns = list(expenses.find({
+        "user_id": user_obj_id,
+        "is_active": True,
+        "document_ref": {"$exists": True, "$ne": None}
+    }))
+
+    if not all_txns:
+        return 0
+
+    # Group by (name, amount, expense_type)
+    groups: dict = {}
+    for txn in all_txns:
+        try:
+            amt = str(Decimal(str(txn["amount"])).quantize(Decimal("0.01")))
+        except Exception:
+            amt = "0.00"
+        key = (txn.get("name", ""), amt, txn.get("expense_type", "expense"))
+        groups.setdefault(key, []).append(txn)
+
+    flagged_groups = 0
+
+    for key, txns in groups.items():
+        distinct_docs = {str(t["document_ref"]) for t in txns if t.get("document_ref")}
+
+        if len(distinct_docs) >= 3:
+            dates = sorted(t["purchase_date"] for t in txns if t.get("purchase_date"))
+            frequency = _infer_frequency(dates)
+
+            expense_ids = [t["expense_id"] for t in txns]
+            result = expenses.update_many(
+                {
+                    "user_id": user_obj_id,
+                    "expense_id": {"$in": expense_ids},
+                    "is_active": True,
+                    "is_recurring": False
+                },
+                {"$set": {
+                    "is_recurring": True,
+                    "frequency": frequency,
+                    "updated_at": datetime.now(timezone.utc)
+                }}
+            )
+            if result.modified_count > 0:
+                flagged_groups += 1
+
+    return flagged_groups
+
 
 #Assign Entry to Doc

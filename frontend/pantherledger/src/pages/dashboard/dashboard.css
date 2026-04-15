@@ -18,15 +18,22 @@
   height: 64px;
   background: #081E3F;
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
 .dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   color: #ffffff;
   font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: -0.01em;
   text-decoration: none;
+}
+
+.dash-brand-logo {
+  height: 1.75rem;
+  width: auto;
 }
 
 .dash-nav-right {

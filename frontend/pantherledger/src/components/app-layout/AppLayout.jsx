@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { getSession, clearSession } from '../../api'
 import Icon from './Icon'
+import img from '../../assets/panther-logo.png'
 import '../../pages/dashboard/dashboard.css'
 
 const MAIN_NAV = [
@@ -11,7 +12,6 @@ const MAIN_NAV = [
 ]
 
 const FINANCE_NAV = [
-  { id: 'accounts', label: 'Accounts', icon: 'card',     path: null        },
   { id: 'spending', label: 'Spending', icon: 'activity', path: '/spending' },
 ]
 
@@ -29,7 +29,10 @@ const AppLayout = ({ activeNav, children }) => {
     <div className="dash-wrap">
 
       <header className="dash-nav">
-        <Link to="/" className="dash-brand">Panther Ledger</Link>
+        <Link to="/" className="dash-brand">
+          <img src={img} alt="" className="dash-brand-logo" />
+          Panther Ledger
+        </Link>
         <div className="dash-nav-right">
           <button className="dash-icon-btn"><Icon name="bell" /></button>
           <button className="dash-icon-btn"><Icon name="search" /></button>
@@ -73,11 +76,6 @@ const AppLayout = ({ activeNav, children }) => {
         </main>
 
       </div>
-
-      <button className="chat-fab">
-        <Icon name="chat" size={20} />
-        <span className="chat-dot" />
-      </button>
 
     </div>
   )

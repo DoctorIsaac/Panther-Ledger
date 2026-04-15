@@ -6,6 +6,7 @@ from bson import ObjectId
 
 from app.pdf.pdf_processing import process_bank_statement
 from app.models.document import delete_document
+from app.models.expense_entry import detect_and_flag_recurring
 from app.services.expense_service import delete_customer_expense_entry
 from app.db.db_connection import get_database
 from app.routes.serializers import serialize
@@ -40,6 +41,7 @@ async def upload_document(
             file_name=file.filename,
             description=description,
         )
+        detect_and_flag_recurring(user_id)
         return serialize(result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
